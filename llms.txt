@@ -1,0 +1,33 @@
+# Opentrons Knowledge
+
+> Immutable, versioned Opentrons Knowledge Corpus artifacts (tar.zst + OCI) for protocol development.
+
+The primary product is the corpus artifact, not a search SDK or lookup library.
+
+## Agent start here
+
+- [AGENTS.md](AGENTS.md): short agent entrypoint
+- [docs/agent-usage.md](docs/agent-usage.md): full agent consumption guide
+
+## Product docs
+
+- [README.md](README.md): build, pack, CLI
+- [docs/product-architecture.md](docs/product-architecture.md): architecture
+- [docs/corpus-format.md](docs/corpus-format.md): artifact layout and schemas
+- [docs/source-analysis.md](docs/source-analysis.md): source pins and docs layout
+- [docs/versioning.md](docs/versioning.md): version axes
+- [docs/release-process.md](docs/release-process.md): release and publish
+- [LICENSE](LICENSE) / [NOTICE](NOTICE): Apache License 2.0 (Opentrons Labworks, Inc.)
+
+## Published artifact discovery
+
+- Packed file: `opentrons-knowledge-<version>.tar.zst` (GitHub Releases)
+- OCI: `ghcr.io/opentrons/opentrons-knowledge:<version>` (ORAS pull)
+
+After unpack/pull, agents should open:
+
+- `AGENTS.md`
+- `docs/agent-usage.md`
+- `manifest.yaml`
+- `corpus/*.jsonl.zst`
+- `indexes/lexical/`

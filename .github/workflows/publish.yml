@@ -1,0 +1,113 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      corpus_version:
+        description: Corpus version to publish (for example 9.1.1-k1)
+        required: true
+      confirm:
+        description: Type publish to confirm immutable publication
+        required: true
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  publish:
+    if: github.event.inputs.confirm == 'publish'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create/update GitHub Release and upload tar.zst assets
+      packages: write # push OCI corpus artifact to GHCR via ORAS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout Opentrons/opentrons
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Opentrons/opentrons
+          path: opentrons
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install ORAS
+        env:
+          ORAS_VERSION: "1.2.2"
+        run: |
+          curl -fsSL \
+            "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz" \
+            -o oras.tgz
+          tar -xzf oras.tgz oras
+          sudo install -m 0755 oras /usr/local/bin/oras
+          oras version
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --frozen
+
+      - name: Build, validate, and pack tar.zst
+        env:
+          CORPUS_VERSION: ${{ github.event.inputs.corpus_version }}
+        run: |
+          uv run opentrons-knowledge build \
+            --manifest "corpora/${CORPUS_VERSION}/source-manifest.yaml" \
+            --opentrons-repo ./opentrons \
+            --output dist
+          uv run opentrons-knowledge validate \
+            --corpus "dist/opentrons-knowledge-${CORPUS_VERSION}"
+          uv run opentrons-knowledge pack \
+            --corpus "dist/opentrons-knowledge-${CORPUS_VERSION}" \
+            --output "dist/opentrons-knowledge-${CORPUS_VERSION}.tar.zst"
+          uv run python - <<'PY'
+          from pathlib import Path
+          import os
+          from opentrons_knowledge.normalization.serialize import file_sha256
+          version = os.environ["CORPUS_VERSION"]
+          archive = Path(f"dist/opentrons-knowledge-{version}.tar.zst")
+          digest = file_sha256(archive)
+          Path(f"dist/opentrons-knowledge-{version}.tar.zst.sha256").write_text(
+              f"{digest}  {archive.name}\n", encoding="utf-8"
+          )
+          print(archive, digest)
+          PY
+
+      - name: Upload GitHub Release assets
+        env:
+          CORPUS_VERSION: ${{ github.event.inputs.corpus_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="knowledge-v${CORPUS_VERSION}"
+          ARCHIVE="dist/opentrons-knowledge-${CORPUS_VERSION}.tar.zst"
+          CHECKSUM="${ARCHIVE}.sha256"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ARCHIVE}" "${CHECKSUM}" --clobber
+          else
+            gh release create "${TAG}" "${ARCHIVE}" "${CHECKSUM}" \
+              --title "Opentrons Knowledge ${CORPUS_VERSION}" \
+              --notes "Corpus artifact for Opentrons Knowledge ${CORPUS_VERSION} (tar.zst + GHCR OCI)."
+          fi
+
+      - name: Login to GHCR
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | oras login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      - name: Publish OCI artifact via ORAS
+        env:
+          CORPUS_VERSION: ${{ github.event.inputs.corpus_version }}
+        run: |
+          uv run opentrons-knowledge publish \
+            --corpus "dist/opentrons-knowledge-${CORPUS_VERSION}" \
+            --registry ghcr.io/opentrons/opentrons-knowledge

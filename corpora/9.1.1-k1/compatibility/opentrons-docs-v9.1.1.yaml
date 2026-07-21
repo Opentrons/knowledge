@@ -1,0 +1,13 @@
+source_key: opentrons_docs
+target_release: v9.1.1
+status: validated
+relationship: docs-deploy-tag-for-9.1.x
+validated_on: "2026-07-21"
+notes: >
+  Pinned to mkdocs-2026-07-16 (commit 34bfc1870aff37bf90408a92ce19f30eea754aaf)
+  which publishes apiLevel 2.29 and robot_stack_version 9.1.0. Chosen over the
+  docs tree inside tag v9.1.1 because that tree still reported 2.28 / 9.0.0.
+known_gaps:
+  - Docs deploy commit differs from software tag commit
+  - liquid-class-tables/*.md are generated projections of shared-data; prefer
+    shared-data entities as normative if table and definition diverge

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/document.schema.json",
+  "title": "Document",
+  "type": "object",
+  "required": [
+    "document_id",
+    "title",
+    "source_repository",
+    "source_commit",
+    "source_path",
+    "source_url",
+    "source_type",
+    "authority_level",
+    "content_hash"
+  ],
+  "properties": {
+    "document_id": { "type": "string" },
+    "title": { "type": "string" },
+    "source_repository": { "type": "string" },
+    "source_commit": { "type": "string" },
+    "source_path": { "type": "string" },
+    "source_url": { "type": "string" },
+    "rendered_url": { "type": ["string", "null"] },
+    "source_type": { "type": "string" },
+    "authority_level": { "type": "string" },
+    "robot_types": { "type": "array", "items": { "type": "string" } },
+    "api_versions": { "type": "array", "items": { "type": "string" } },
+    "content_hash": { "type": "string" },
+    "document_format": { "type": "string" },
+    "headings": { "type": "array", "items": { "type": "string" } },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

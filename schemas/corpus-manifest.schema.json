@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/corpus-manifest.schema.json",
+  "title": "CorpusManifest",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "human_identity",
+    "target_opentrons_release",
+    "corpus_schema_version",
+    "builder",
+    "sources"
+  ],
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^.+-k[0-9]+$" },
+    "human_identity": { "type": "string" },
+    "target_opentrons_release": { "type": "string" },
+    "corpus_schema_version": { "type": "integer", "minimum": 1 },
+    "builder": { "type": "object" },
+    "processing": { "type": "object" },
+    "embedding": { "type": "object" },
+    "publication": { "type": "object" },
+    "sources": { "type": "array" },
+    "authority_precedence": { "type": "array" },
+    "environment": { "type": "object" },
+    "checksums": { "type": "object" },
+    "artifact_digest": { "type": ["string", "null"] },
+    "variants": { "type": "array", "items": { "type": "string" } },
+    "record_counts": { "type": "object" },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

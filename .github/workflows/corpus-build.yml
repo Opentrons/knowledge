@@ -1,0 +1,74 @@
+name: corpus-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: Path to source manifest
+        required: true
+        default: corpora/9.1.1-k1/source-manifest.yaml
+  push:
+    tags:
+      - "knowledge-v*"
+
+concurrency:
+  group: corpus-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # checkout knowledge repo and Opentrons/opentrons for corpus build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout Opentrons/opentrons
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Opentrons/opentrons
+          path: opentrons
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --frozen
+
+      - name: Build corpus
+        env:
+          MANIFEST_INPUT: ${{ github.event.inputs.manifest }}
+        run: |
+          MANIFEST="${MANIFEST_INPUT:-corpora/9.1.1-k1/source-manifest.yaml}"
+          uv run opentrons-knowledge build \
+            --manifest "${MANIFEST}" \
+            --opentrons-repo ./opentrons \
+            --output dist
+
+      - name: Validate corpus
+        run: |
+          CORPUS_DIR=$(find dist -maxdepth 1 -type d -name 'opentrons-knowledge-*' | head -1)
+          uv run opentrons-knowledge validate --corpus "$CORPUS_DIR"
+          uv run opentrons-knowledge inspect --corpus "$CORPUS_DIR"
+
+      - name: Pack corpus tar.zst
+        run: |
+          CORPUS_DIR=$(find dist -maxdepth 1 -type d -name 'opentrons-knowledge-*' | head -1)
+          uv run opentrons-knowledge pack --corpus "$CORPUS_DIR" --overwrite
+
+      - name: Upload corpus artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: opentrons-knowledge-corpus
+          path: |
+            dist/opentrons-knowledge-*.tar.zst
+            dist/opentrons-knowledge-*/

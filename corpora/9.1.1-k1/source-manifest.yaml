@@ -1,0 +1,106 @@
+corpus:
+  name: opentrons-knowledge
+  version: 9.1.1-k1
+  target_opentrons_release: v9.1.1
+  corpus_schema_version: 1
+
+sources:
+  opentrons_ai_v1:
+    repository: https://github.com/Opentrons/opentrons
+    tag: ai-server@0.0.20
+    commit: aa7bb9efe607a9b781b2b7e50bdc9af94ccc6fbf
+    paths:
+      - opentrons-ai-server/api/storage/docs
+    exclude_paths:
+      - opentrons-ai-server/api/storage/docs/pd
+    compatibility:
+      status: validated
+      target_release: v9.1.1
+      relationship: latest-ai-server-tag
+      validation_record: compatibility/opentrons-ai-v1-v9.1.1.yaml
+      notes: >
+        AI v1 protocol guides from the latest opentrons-ai-server release tag
+        (ai-server@0.0.20). Protocol Designer subtree (pd/) is excluded.
+
+  opentrons_docs:
+    repository: https://github.com/Opentrons/opentrons
+    tag: mkdocs-2026-07-16
+    commit: 34bfc1870aff37bf90408a92ce19f30eea754aaf
+    paths:
+      - docs/python-api/docs
+      - docs/python-api/mkdocs.yml
+      - docs/flex/docs
+      - docs/ot-2/docs
+      - api/docs/v2/example_protocols
+    build_target: mkdocs
+    exclude_paths:
+      - docs/python-api/docs/img
+    compatibility:
+      status: validated
+      target_release: v9.1.1
+      relationship: docs-deploy-tag-for-9.1.x
+      validation_record: compatibility/opentrons-docs-v9.1.1.yaml
+      notes: >
+        MkDocs deploy tags are independent of robot-stack tags. This pin documents
+        apiLevel 2.29 / robot_stack_version 9.1.0, which is the published docs
+        surface for the 9.1.x line. The v9.1.1 software tag still carried older
+        docs metadata (2.28 / 9.0.0). Include liquid-class-tables/*.md even though
+        MkDocs excludes them from nav; they are the generated parameter tables
+        referenced by liquid-class definition pages.
+
+  protocol_api:
+    repository: https://github.com/Opentrons/opentrons
+    tag: v9.1.1
+    commit: ad074b80e267084f08065b6d559b791140dfa671
+    paths:
+      - api/src/opentrons/protocol_api
+    compatibility:
+      status: exact-release
+      target_release: v9.1.1
+      relationship: exact-release
+
+  shared_data:
+    repository: https://github.com/Opentrons/opentrons
+    tag: v9.1.1
+    commit: ad074b80e267084f08065b6d559b791140dfa671
+    paths:
+      - shared-data/labware/definitions
+      - shared-data/labware/schemas
+      - shared-data/pipette/definitions
+      - shared-data/pipette/schemas
+      - shared-data/module/definitions
+      - shared-data/module/schemas
+      - shared-data/deck/definitions
+      - shared-data/deck/schemas
+      - shared-data/robot/definitions
+      - shared-data/robot/schemas
+      - shared-data/liquid-class/definitions
+    compatibility:
+      status: exact-release
+      target_release: v9.1.1
+      relationship: exact-release
+
+builder:
+  name: opentrons-knowledge-builder
+  version: 0.1.0
+  commit: null
+
+processing:
+  parser_version: 1
+  normalization_version: 1
+  relationship_model_version: 1
+  chunking_strategy: semantic-sections-v1
+
+embedding:
+  enabled: true
+  provider: fake
+  model: fake-hash-v1
+  dimensions: 32
+
+publication:
+  formats:
+    - tar.zst
+    - oci
+  artifact_name_template: opentrons-knowledge-{version}.tar.zst
+  registry: ghcr.io
+  repository: opentrons/opentrons-knowledge

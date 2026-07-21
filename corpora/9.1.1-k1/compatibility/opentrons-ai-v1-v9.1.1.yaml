@@ -1,0 +1,12 @@
+source_key: opentrons_ai_v1
+target_release: v9.1.1
+status: validated
+relationship: latest-ai-server-tag
+validated_on: "2026-07-21"
+notes: >
+  Curated Opentrons AI v1 protocol guides from the latest opentrons-ai-server
+  tag ai-server@0.0.20 (commit aa7bb9efe607a9b781b2b7e50bdc9af94ccc6fbf).
+  Protocol Designer subtree (pd/) is excluded and must not appear in the corpus.
+known_gaps:
+  - Guides are not automatically version-gated to Protocol API releases
+  - AI server tag is independent of the robot-stack v9.1.1 pin

@@ -1,0 +1,50 @@
+# Virtualenvs and local tooling
+.venv/
+.uv/
+venv/
+env/
+
+# Byte-compiled / caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.hypothesis/
+.cache/
+
+# Build / packaging outputs
+build/
+dist/
+*.egg-info/
+*.egg
+.Python
+
+# Local scratch and materialized source trees
+.work/
+.data/
+
+# Archives (prefer packing into dist/, which is already ignored)
+*.tar
+*.tar.gz
+*.tar.zst
+*.tgz
+oras
+oras.tgz
+
+# Secrets and local env
+.token
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

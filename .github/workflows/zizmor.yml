@@ -1,0 +1,45 @@
+# GitHub Actions security analysis with zizmor.
+# Enforces SHA-pinned actions and catches common workflow misconfigurations.
+# https://docs.zizmor.sh/integrations/#github-actions
+name: zizmor
+
+on:
+  pull_request:
+    paths:
+      - ".github/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/**"
+  workflow_dispatch:
+
+concurrency:
+  group: zizmor-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone workflows for offline audits
+      actions: read # read workflow metadata for online pin verification
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@6599ee8b7a49aef6a770f63d261d214911a7ce02 # v0.6.0
+        with:
+          # Keep in sync with justfile zizmor_version.
+          version: v1.27.0
+          persona: pedantic
+          min-severity: low
+          min-confidence: high
+          advanced-security: false
+          annotations: true
+          token: ${{ secrets.GITHUB_TOKEN }}

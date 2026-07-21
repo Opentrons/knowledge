@@ -1,0 +1,11 @@
+# zizmor configuration for Opentrons Knowledge workflows.
+# https://docs.zizmor.sh/configuration/
+#
+# Default v1.20+ policy requires full SHA pinning on all actions (hash-pin).
+# CI runs with persona=pedantic and min-severity=low (see .github/workflows/zizmor.yml).
+
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin

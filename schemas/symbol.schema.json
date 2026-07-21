@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/symbol.schema.json",
+  "title": "CodeSymbol",
+  "type": "object",
+  "required": ["symbol_id", "qualified_name", "symbol_type", "module_path", "source_path", "source_url", "signature", "content_hash"],
+  "properties": {
+    "symbol_id": { "type": "string" },
+    "qualified_name": { "type": "string" },
+    "symbol_type": { "type": "string" },
+    "module_path": { "type": "string" },
+    "source_path": { "type": "string" },
+    "source_url": { "type": "string" },
+    "signature": { "type": "string" },
+    "parameters": { "type": "array" },
+    "return_type": { "type": ["string", "null"] },
+    "docstring": { "type": ["string", "null"] },
+    "minimum_api_version": { "type": ["string", "null"] },
+    "maximum_api_version": { "type": ["string", "null"] },
+    "deprecated": { "type": "boolean" },
+    "deprecation_message": { "type": ["string", "null"] },
+    "robot_types": { "type": "array", "items": { "type": "string" } },
+    "related_symbols": { "type": "array", "items": { "type": "string" } },
+    "related_document_sections": { "type": "array", "items": { "type": "string" } },
+    "line_start": { "type": ["integer", "null"] },
+    "line_end": { "type": ["integer", "null"] },
+    "content_hash": { "type": "string" },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

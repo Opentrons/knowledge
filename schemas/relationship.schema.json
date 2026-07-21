@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/relationship.schema.json",
+  "title": "Relationship",
+  "type": "object",
+  "required": ["relationship_id", "source_id", "target_id", "relationship_type"],
+  "properties": {
+    "relationship_id": { "type": "string" },
+    "source_id": { "type": "string" },
+    "target_id": { "type": "string" },
+    "relationship_type": { "type": "string" },
+    "properties": { "type": "object" },
+    "source_reference": { "type": ["string", "null"] },
+    "confidence": { "type": "number" },
+    "derivation_method": { "type": "string" }
+  },
+  "additionalProperties": false
+}

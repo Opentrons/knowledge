@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/entity.schema.json",
+  "title": "Entity",
+  "type": "object",
+  "required": ["entity_id", "entity_type", "canonical_name", "display_name", "content_hash"],
+  "properties": {
+    "entity_id": { "type": "string" },
+    "entity_type": { "type": "string" },
+    "canonical_name": { "type": "string" },
+    "display_name": { "type": "string" },
+    "aliases": { "type": "array", "items": { "type": "string" } },
+    "source_ids": { "type": "array", "items": { "type": "string" } },
+    "properties": { "type": "object" },
+    "version_scope": { "type": ["string", "null"] },
+    "robot_scope": { "type": "array", "items": { "type": "string" } },
+    "deprecated": { "type": "boolean" },
+    "content_hash": { "type": "string" },
+    "raw_source": { "type": ["object", "null"] }
+  },
+  "additionalProperties": false
+}
