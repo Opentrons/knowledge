@@ -28,16 +28,18 @@ app = typer.Typer(
 
 @app.command()
 def build(
-    manifest: Path = typer.Option(..., "--manifest", exists=True, dir_okay=False),
+    manifest: Path | None = typer.Option(None, "--manifest", exists=True, dir_okay=False),
     output: Path = typer.Option(Path("dist"), "--output"),
     opentrons_repo: Path | None = typer.Option(None, "--opentrons-repo"),
     fixture: bool = typer.Option(False, "--fixture", help="Build CI fixture corpus"),
 ) -> None:
-    """Build a corpus from a source manifest."""
+    """Build a corpus from a source manifest (or the CI fixture with --fixture)."""
     if fixture:
         fixtures = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "mini_sources"
         result = build_fixture_corpus(output, fixtures)
     else:
+        if manifest is None:
+            raise typer.BadParameter("--manifest is required unless --fixture is set")
         result = build_corpus(
             manifest,
             output_dir=output,
