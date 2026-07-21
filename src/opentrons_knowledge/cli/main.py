@@ -124,9 +124,7 @@ def verify(
 ) -> None:
     """Verify a local corpus directory checksums."""
     manifest = Corpus.open(corpus).verify()
-    rprint(
-        f"[green]Verified[/green] {manifest.human_identity} digest={manifest.artifact_digest}"
-    )
+    rprint(f"[green]Verified[/green] {manifest.human_identity} digest={manifest.artifact_digest}")
 
 
 @app.command()

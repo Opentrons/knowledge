@@ -36,15 +36,13 @@ def publish_corpus(
 
     if not overwrite and _remote_exists(oras, reference):
         raise RegistryError(
-            f"Refusing to overwrite immutable corpus tag {reference}. "
-            "Bump the knowledge revision."
+            f"Refusing to overwrite immutable corpus tag {reference}. Bump the knowledge revision."
         )
 
     annotations = {
         "org.opencontainers.image.title": "Opentrons Knowledge Corpus",
         "org.opencontainers.image.description": (
-            f"Opentrons Knowledge corpus {manifest.version} for "
-            f"{manifest.target_opentrons_release}"
+            f"Opentrons Knowledge corpus {manifest.version} for {manifest.target_opentrons_release}"
         ),
         "org.opencontainers.image.version": manifest.version,
         "org.opencontainers.image.revision": manifest.builder.commit or "",
