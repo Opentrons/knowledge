@@ -55,19 +55,29 @@ def publish_corpus(
     }
 
     with tempfile.TemporaryDirectory() as tmp:
-        archive = Path(tmp) / f"opentrons-knowledge-{manifest.version}.tar.gz"
+        tmp_path = Path(tmp)
+        archive_name = f"opentrons-knowledge-{manifest.version}.tar.gz"
+        archive = tmp_path / archive_name
         _tar_directory(corpus_root, archive)
+        # ORAS rejects absolute artifact paths unless path validation is disabled.
+        # Push from the temp dir with a relative filename instead.
         cmd = [
             oras,
             "push",
             reference,
-            f"{archive}:application/vnd.opentrons.knowledge.corpus.v1+tar+gzip",
+            f"{archive_name}:application/vnd.opentrons.knowledge.corpus.v1+tar+gzip",
         ]
         for key, value in annotations.items():
             if value:
                 cmd.extend(["--annotation", f"{key}={value}"])
         try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                text=True,
+                cwd=tmp_path,
+            )
         except subprocess.CalledProcessError as exc:
             raise RegistryError(exc.stderr or str(exc)) from exc
 
