@@ -75,6 +75,22 @@ def test_load_real_911_manifest() -> None:
     assert manifest.publication.repository == "opentrons/opentrons-knowledge"
 
 
+def test_load_real_900_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "9.0.0-k1" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "9.0.0-k1"
+    assert manifest.corpus.target_opentrons_release == "v9.0.0"
+    assert manifest.sources["protocol_api"].tag == "v9.0.0"
+    assert manifest.sources["protocol_api"].commit.startswith("44b37a2f")
+    assert manifest.sources["shared_data"].commit == manifest.sources["protocol_api"].commit
+    assert manifest.sources["opentrons_docs"].tag == "mkdocs-2026-06-02"
+    assert manifest.sources["opentrons_docs"].commit.startswith("345c2408")
+    assert manifest.sources["opentrons_docs"].compatibility.status == CompatibilityStatus.VALIDATED
+    assert manifest.sources["opentrons_ai_v1"].tag == "ai-server@0.0.20"
+    assert manifest.sources["opentrons_ai_v1"].commit.startswith("aa7bb9ef")
+    assert "pd" in "".join(manifest.sources["opentrons_ai_v1"].exclude_paths)
+
+
 def test_source_requires_commit_or_tag() -> None:
     with pytest.raises(ValidationError):
         SourceEntry(

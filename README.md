@@ -22,12 +22,19 @@ just fixture-corpus
 uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-0.0.0-k1
 ```
 
-### Build the `9.1.1-k1` corpus
+### Build a release corpus
 
 Requires a local clone of [Opentrons/opentrons](https://github.com/Opentrons/opentrons)
-that contains tags `v9.1.1`, `mkdocs-2026-07-16`, and `ai-server@0.0.20`.
+with the tags pinned in the chosen source manifest.
 
 ```bash
+# 9.0.0-k1: v9.0.0 + mkdocs-2026-06-02 + ai-server@0.0.20
+uv run opentrons-knowledge build \
+  --manifest corpora/9.0.0-k1/source-manifest.yaml \
+  --opentrons-repo ../opentrons \
+  --output dist
+
+# 9.1.1-k1: v9.1.1 + mkdocs-2026-07-16 + ai-server@0.0.20
 uv run opentrons-knowledge build \
   --manifest corpora/9.1.1-k1/source-manifest.yaml \
   --opentrons-repo ../opentrons \
@@ -37,7 +44,7 @@ uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.1-k1
 uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.1-k1
 ```
 
-That writes `dist/opentrons-knowledge-9.1.1-k1.tar.zst`.
+That writes `dist/opentrons-knowledge-<version>.tar.zst`.
 
 OCI publish (requires [`oras`](https://oras.land/docs/installation) on PATH and
 registry auth):
