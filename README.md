@@ -46,8 +46,14 @@ uv run opentrons-knowledge build \
   --opentrons-repo ../opentrons \
   --output dist
 
-uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.2-k1
-uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.2-k1
+# 9.1.2-k2: v9.1.2 + mkdocs-2026-09-01 + ai-server@0.0.22
+uv run opentrons-knowledge build \
+  --manifest corpora/9.1.2-k2/source-manifest.yaml \
+  --opentrons-repo ../opentrons \
+  --output dist
+
+uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.2-k2
+uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.2-k2
 ```
 
 That writes `dist/opentrons-knowledge-<version>.tar.zst`.
