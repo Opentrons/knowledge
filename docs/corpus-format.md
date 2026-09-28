@@ -5,7 +5,7 @@
 ```text
 dist/opentrons-knowledge-<version>/
   AGENTS.md                 # agent entrypoint (also in repo root)
-  llms.txt                  # LLM/agent discovery index for this artifact
+  llms.txt                  # LLM/agent discovery file for this artifact
   docs/
     agent-usage.md          # full agent consumption guide
   manifest.yaml
@@ -19,14 +19,6 @@ dist/opentrons-knowledge-<version>/
     examples.jsonl.zst
     constraints.jsonl.zst
     source-files.jsonl.zst
-  indexes/
-    lexical/
-      symbols.json
-      entities.json
-      terms.json
-    vector/
-      embeddings.jsonl.zst   # optional
-      meta.yaml
   schemas/
     *.schema.json
   reports/
@@ -34,16 +26,17 @@ dist/opentrons-knowledge-<version>/
     source-report.json
     compatibility-report.json
     duplication-report.json
-    indexing-report.json
 ```
 
-Logical separation is stable even if compression or index formats evolve:
+Logical separation is stable even if compression formats evolve:
 
 - canonical normalized data under `corpus/`
-- derived indexes under `indexes/`
 - schemas under `schemas/`
 - reports under `reports/`
 - provenance in `manifest.yaml` + `checksums.txt`
+
+There is **no** `indexes/` tree in published artifacts. Search and embeddings are
+consumer concerns.
 
 ## Published archives
 
@@ -93,9 +86,8 @@ Long IDs may include a short hash suffix; readable keys remain on the record.
 - zstd compression for corpus streams
 - Content hashes: SHA-256 of normalized payload bytes
 
-Canonical corpus files must be deterministic across machines when embeddings are
-disabled or use a deterministic fake provider. External embedding APIs may make
-vector indexes non-byte-identical; that limitation is recorded in reports.
+Canonical corpus files must be deterministic across machines for a given source
+manifest and builder version.
 
 ## Manifest Fields (high level)
 
@@ -106,8 +98,7 @@ Required concepts:
 - corpus name / version / target release / schema version
 - resolved source commits
 - builder identity
-- processing versions
-- embedding configuration (or `enabled: false`)
+- processing versions (parser, normalization, relationships, chunking)
 - authority precedence
 - checksum inventory
 - optional future `variants` list (unused initially)

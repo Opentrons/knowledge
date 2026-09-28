@@ -25,8 +25,6 @@ from opentrons_knowledge.artifacts.package import (
 )
 from opentrons_knowledge.compatibility.validate import validate_compatibility
 from opentrons_knowledge.docs.markdown import ingest_docs_tree
-from opentrons_knowledge.indexing.embeddings import FakeEmbeddingProvider, build_vector_index
-from opentrons_knowledge.indexing.lexical import build_lexical_index
 from opentrons_knowledge.models.enums import AuthorityLevel, CompatibilityStatus
 from opentrons_knowledge.models.manifest import (
     BuilderInfo,
@@ -187,8 +185,6 @@ def build_corpus(
 
         shutil.rmtree(corpus_root)
     (corpus_root / "corpus").mkdir(parents=True)
-    (corpus_root / "indexes" / "lexical").mkdir(parents=True)
-    (corpus_root / "indexes" / "vector").mkdir(parents=True)
     (corpus_root / "reports").mkdir(parents=True)
     (corpus_root / "schemas").mkdir(parents=True)
 
@@ -208,29 +204,6 @@ def build_corpus(
             corpus_root / "corpus" / "source-files.jsonl.zst", source_files
         ),
     }
-
-    lexical_stats = build_lexical_index(
-        corpus_root / "indexes" / "lexical",
-        symbols=symbols,
-        entities=entities,
-        sections=sections,
-    )
-    provider = None
-    if manifest.embedding.enabled and (manifest.embedding.provider or "fake") == "fake":
-        provider = FakeEmbeddingProvider(
-            dimensions=manifest.embedding.dimensions or 32,
-            model=manifest.embedding.model or "fake-hash-v1",
-        )
-    vector_stats = build_vector_index(
-        corpus_root / "indexes" / "vector",
-        sections=sections,
-        symbols=symbols,
-        entities=entities,
-        constraints=constraints,
-        examples=examples,
-        embedding=manifest.embedding,
-        provider=provider,
-    )
 
     repo_root = Path(__file__).resolve().parents[3]
     if schemas_dir is None:
@@ -264,10 +237,6 @@ def build_corpus(
             "duplicates": graph.duplicates,
             "conflicts": graph.conflicts,
         },
-        "indexing-report": {
-            "lexical": lexical_stats,
-            "vector": vector_stats,
-        },
     }
     write_build_reports(corpus_root / "reports", reports)
 
@@ -289,7 +258,6 @@ def build_corpus(
             commit=builder_commit or manifest.builder.commit,
         ),
         processing=manifest.processing,
-        embedding=manifest.embedding,
         publication=manifest.publication,
         sources=sorted(materialized.sources.values(), key=lambda s: s.key),
         authority_precedence=manifest.authority_precedence,
@@ -304,7 +272,6 @@ def build_corpus(
     corpus_manifest.checksums = checksums
     corpus_manifest.artifact_digest = f"sha256:{corpus_artifact_digest(corpus_root)}"
     write_manifest(corpus_root, corpus_manifest)
-    # Re-finalize checksums after embedding digest into manifest
     checksums = finalize_checksums(corpus_root)
     corpus_manifest.checksums = checksums
     corpus_manifest.artifact_digest = f"sha256:{corpus_artifact_digest(corpus_root)}"
@@ -326,7 +293,6 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
     from opentrons_knowledge.models.manifest import (
         CompatibilityBlock,
         CorpusIdentity,
-        EmbeddingInfo,
         ProcessingInfo,
         PublicationInfo,
         SourceEntry,
@@ -388,7 +354,6 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
         },
         builder=BuilderInfo(name=BUILDER_NAME, version=__version__, commit="fixture"),
         processing=ProcessingInfo(),
-        embedding=EmbeddingInfo(enabled=True, provider="fake", model="fake-hash-v1", dimensions=16),
         publication=PublicationInfo(),
     )
 
@@ -510,7 +475,7 @@ def _build_from_materialized(
         import shutil
 
         shutil.rmtree(corpus_root)
-    for sub in ("corpus", "indexes/lexical", "indexes/vector", "reports", "schemas"):
+    for sub in ("corpus", "reports", "schemas"):
         (corpus_root / sub).mkdir(parents=True)
 
     counts = {
@@ -529,25 +494,6 @@ def _build_from_materialized(
             corpus_root / "corpus" / "source-files.jsonl.zst", source_files
         ),
     }
-    lexical_stats = build_lexical_index(
-        corpus_root / "indexes" / "lexical",
-        symbols=symbols,
-        entities=entities,
-        sections=sections,
-    )
-    vector_stats = build_vector_index(
-        corpus_root / "indexes" / "vector",
-        sections=sections,
-        symbols=symbols,
-        entities=entities,
-        constraints=graph.constraints,
-        examples=examples,
-        embedding=manifest.embedding,
-        provider=FakeEmbeddingProvider(
-            dimensions=manifest.embedding.dimensions or 16,
-            model=manifest.embedding.model or "fake-hash-v1",
-        ),
-    )
     repo_root = Path(__file__).resolve().parents[3]
     copy_schemas(schemas_dir, corpus_root / "schemas")
     copy_agent_guides(repo_root, corpus_root)
@@ -566,7 +512,6 @@ def _build_from_materialized(
             },
             "compatibility-report": compat_report.model_dump(mode="json"),
             "duplication-report": {"duplicates": graph.duplicates, "conflicts": graph.conflicts},
-            "indexing-report": {"lexical": lexical_stats, "vector": vector_stats},
         },
     )
     corpus_manifest = CorpusManifest(
@@ -577,7 +522,6 @@ def _build_from_materialized(
         corpus_schema_version=CORPUS_SCHEMA_VERSION,
         builder=manifest.builder,
         processing=manifest.processing,
-        embedding=manifest.embedding,
         publication=manifest.publication,
         sources=sorted(materialized.sources.values(), key=lambda s: s.key),
         authority_precedence=manifest.authority_precedence,

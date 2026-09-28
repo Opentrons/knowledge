@@ -35,14 +35,13 @@ sha256:<digest of the packed corpus / OCI manifest>
 |-------|----------------|
 | Source material | Pinned git trees and optional curated files |
 | Normalized knowledge | Provider-neutral documents, sections, symbols, entities, relationships, constraints, examples |
-| Generated indexes | Lexical and optional vector indexes derived from canonical data |
-| Embeddings | Optional; never required for canonical corpus validity |
 | Build metadata | Builder version, OS, Python, lock digest, timestamps |
 | Compatibility metadata | Explicit source-to-release relationships |
 | Artifact identity | Directory checksums + `.tar.zst` digest + OCI digest |
 
 Canonical corpus records must remain usable without any particular LLM provider,
-vector database, agent framework, or runtime service.
+vector database, agent framework, or runtime service. **Indexing, embeddings,
+and ranking are explicitly out of scope** for this repository.
 
 ## Package Layout
 
@@ -57,7 +56,6 @@ src/opentrons_knowledge/
   normalization/    # IDs, hashing, deterministic JSONL
   relationships/    # relationship + constraint extraction
   compatibility/    # compatibility validation
-  indexing/         # lexical + embedding providers + vector index
   artifacts/        # packaging, checksums, reports, tar.zst
   registry/         # ORAS publish/pull for OCI
   consumer/         # thin open/verify/inspect helpers
@@ -79,11 +77,9 @@ src/opentrons_knowledge/
 11. Build relationships and constraints
 12. Detect duplicates and conflicts
 13. Write canonical corpus files (sorted, stable IDs)
-14. Build lexical index
-15. Optionally embed and build vector index
-16. Write reports and checksums
-17. Pack as `opentrons-knowledge-<version>.tar.zst`
-18. Optionally publish OCI via ORAS to GHCR
+14. Write reports and checksums
+15. Pack as `opentrons-knowledge-<version>.tar.zst`
+16. Optionally publish OCI via ORAS to GHCR
 
 ## Authority Precedence
 
@@ -101,8 +97,9 @@ Conflicts are never silently deleted.
 ## Consumer Boundary
 
 This package **builds, packs, and publishes** corpora. It does not provide
-search or `get_symbol`-style lookup APIs. Downstream systems unpack/pull the
-artifact and read `corpus/` + `indexes/` with their own retrieval stack.
+search, indexes, embeddings, or `get_symbol`-style lookup APIs. Downstream
+systems unpack/pull the artifact and read `corpus/` with their own retrieval
+stack.
 
 Agent-facing usage instructions ship in the repository and inside every corpus
 as `AGENTS.md`, `llms.txt`, and `docs/agent-usage.md`.
@@ -110,6 +107,8 @@ as `AGENTS.md`, `llms.txt`, and `docs/agent-usage.md`.
 ## Non-Goals (initial product)
 
 - Lookup / query SDK
+- Lexical or vector indexes in the artifact
+- Embeddings or re-ranking
 - Full agent framework
 - Production search SaaS
 - Multiple artifact variants unless size forces them

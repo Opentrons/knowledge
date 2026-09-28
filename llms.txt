@@ -29,5 +29,4 @@ After unpack/pull, agents should open:
 - `AGENTS.md`
 - `docs/agent-usage.md`
 - `manifest.yaml`
-- `corpus/*.jsonl.zst`
-- `indexes/lexical/`
+- `corpus/*.jsonl.zst` (canonical records; build your own indexes downstream)

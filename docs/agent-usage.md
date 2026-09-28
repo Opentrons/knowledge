@@ -1,8 +1,9 @@
 # Agent Guide: Using an Opentrons Knowledge Corpus
 
 This document tells agents and agent authors how to consume an Opentrons
-Knowledge Corpus. The corpus is a **data package**. Retrieval, search, and
-tooling belong in downstream systems.
+Knowledge Corpus. The corpus is a **versioned data package** of pinned Opentrons
+source material (docs, Protocol API, shared-data, curated AI guides). Retrieval,
+search, ranking, and embeddings belong in downstream systems.
 
 Canonical copies:
 
@@ -25,6 +26,10 @@ Distribution formats:
 opentrons-knowledge-9.1.1-k1.tar.zst
 ghcr.io/opentrons/opentrons-knowledge:9.1.1-k1
 ```
+
+This project **does not** ship lexical indexes, vector indexes, embeddings, or
+re-ranking. Consumers build whatever retrieval stack they need from the canonical
+records.
 
 ## How to obtain and open
 
@@ -60,9 +65,6 @@ corpus/
   examples.jsonl.zst
   constraints.jsonl.zst
   source-files.jsonl.zst
-indexes/
-  lexical/
-  vector/          # optional
 schemas/
 reports/
 ```
@@ -77,11 +79,10 @@ Records are deterministic JSONL (zstd), sorted by primary id.
 | Labware / pipette / module identity | `corpus/entities.jsonl.zst` (+ `raw_source`) |
 | How-to / narrative | `corpus/sections.jsonl.zst` / `documents.jsonl.zst` |
 | Restrictions / version gates | `corpus/constraints.jsonl.zst` |
-| Exact string lookup seeds | `indexes/lexical/` |
 | Provenance / pins | `manifest.yaml`, `sources` in reports |
 
 Build your own search (lexical, vector, hybrid) on these files. This repo does
-not ship a query API.
+not ship a query API or pre-built indexes.
 
 ## Authority precedence (required)
 
@@ -114,7 +115,7 @@ Cite:
 
 1. Confirm corpus version matches the target Opentrons release.
 2. Classify the question (symbol / entity / procedure / constraint).
-3. Search or scan the relevant JSONL / lexical indexes with your stack.
+3. Scan or index the relevant JSONL with your stack.
 4. Apply authority precedence.
 5. Cite `source_url` and corpus version.
 6. If evidence is missing or conflicting, say so.

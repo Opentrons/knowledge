@@ -1,0 +1,18 @@
+source_key: opentrons_ai_v1
+target_release: v9.1.2
+status: validated
+relationship: latest-ai-server-tag
+validated_on: "2026-09-26"
+notes: >
+  Curated Opentrons AI v1 protocol guides from the latest opentrons-ai-server
+  tag ai-server@0.0.22 (commit 0b6a6ecd2d6e040e02f40bd1d44193cfc42b33dc).
+  Versus 9.1.2-k1 (ai-server@0.0.20), ten non-pd example/guide files changed:
+  example protocols were normalized to apiLevel 2.28 and a typo was fixed in
+  96-channel-pipette.md (AUTH-3347, PR #22474, shipped in 0.0.22).
+  ai-server@0.0.21 did not change this docs tree. Protocol Designer subtree
+  (pd/) is excluded and must not appear in the corpus.
+known_gaps:
+  - Guides are not automatically version-gated to Protocol API releases
+  - AI server tag is independent of the robot-stack v9.1.2 pin
+  - Official MkDocs for 9.1.x still documents apiLevel 2.29; these curated
+    examples target 2.28 (last PyPI analyzer that covers OT-2 and Flex together)

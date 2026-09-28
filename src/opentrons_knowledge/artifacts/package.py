@@ -115,7 +115,6 @@ def inspect_corpus(corpus_root: Path) -> dict[str, Any]:
         "builder": manifest.builder.model_dump(),
         "sources": [s.model_dump() for s in manifest.sources],
         "record_counts": counts,
-        "embedding": manifest.embedding.model_dump(),
         "artifact_digest": manifest.artifact_digest,
     }
 
@@ -159,9 +158,7 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
                 "",
                 "## Data",
                 "",
-                "- corpus/*.jsonl.zst: canonical records",
-                "- indexes/lexical/: exact-term lookup maps",
-                "- indexes/vector/: optional embeddings",
+                "- corpus/*.jsonl.zst: canonical records (build your own indexes)",
                 "- schemas/: JSON schemas",
                 "- reports/: build and compatibility reports",
                 "",

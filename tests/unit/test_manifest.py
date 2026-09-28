@@ -123,6 +123,16 @@ def test_load_real_912_k2_manifest() -> None:
     assert "pd" in "".join(manifest.sources["opentrons_ai_v1"].exclude_paths)
 
 
+def test_load_real_912_k3_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "9.1.2-k3" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "9.1.2-k3"
+    assert manifest.corpus.target_opentrons_release == "v9.1.2"
+    assert manifest.sources["protocol_api"].commit.startswith("1fb64381")
+    assert manifest.sources["opentrons_docs"].commit.startswith("b38ab22d")
+    assert manifest.sources["opentrons_ai_v1"].commit.startswith("0b6a6ecd")
+
+
 def test_source_requires_commit_or_tag() -> None:
     with pytest.raises(ValidationError):
         SourceEntry(

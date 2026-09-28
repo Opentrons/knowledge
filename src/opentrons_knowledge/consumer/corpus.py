@@ -61,9 +61,9 @@ def diff_corpora(left: Path, right: Path) -> dict[str, Any]:
             "left": left_c.manifest.corpus_schema_version,
             "right": right_c.manifest.corpus_schema_version,
         },
-        "embedding": {
-            "left": left_c.manifest.embedding.model_dump(),
-            "right": right_c.manifest.embedding.model_dump(),
+        "processing": {
+            "left": left_c.manifest.processing.model_dump(),
+            "right": right_c.manifest.processing.model_dump(),
         },
     }
 

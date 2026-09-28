@@ -20,9 +20,9 @@ Examples: `9.1.1-k1`, `9.1.1-k2`, `9.2.0-k1`.
 Do **not** encode source commits in the public version. Exact source identity
 belongs in the source manifest and corpus manifest.
 
-Bump the knowledge revision when ingestion, chunking, relationships, indexes,
-embeddings, annotations, or compatibility validation change the published
-artifact for the same Opentrons release.
+Bump the knowledge revision when ingestion, chunking, relationships,
+annotations, or compatibility validation change the published artifact for the
+same Opentrons release.
 
 ## Git Release Tag
 

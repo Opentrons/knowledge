@@ -46,14 +46,17 @@ uv run opentrons-knowledge build \
   --opentrons-repo ../opentrons \
   --output dist
 
-# 9.1.2-k2: v9.1.2 + mkdocs-2026-09-01 + ai-server@0.0.22
+# 9.1.2-k3: same pins as k2; artifact drops shipped indexes/embeddings (see RELEASE-NOTES)
 uv run opentrons-knowledge build \
-  --manifest corpora/9.1.2-k2/source-manifest.yaml \
+  --manifest corpora/9.1.2-k3/source-manifest.yaml \
   --opentrons-repo ../opentrons \
   --output dist
 
-uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.2-k2
-uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.2-k2
+uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.2-k3
+uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.2-k3
+
+# 9.1.2-k2 (superseded by k3 for new consumers)
+# uv run opentrons-knowledge build --manifest corpora/9.1.2-k2/source-manifest.yaml ...
 ```
 
 That writes `dist/opentrons-knowledge-<version>.tar.zst`.
@@ -83,7 +86,8 @@ uv run opentrons-knowledge pull 9.1.1-k1 --output dist
 ```
 
 See [AGENTS.md](AGENTS.md) and [docs/agent-usage.md](docs/agent-usage.md) for how
-agents should treat the files (`corpus/*.jsonl.zst`, `indexes/`, `manifest.yaml`).
+agents should treat the files (`corpus/*.jsonl.zst`, `manifest.yaml`). Indexing
+and search are consumer responsibilities, not part of the published artifact.
 
 ## Documentation
 

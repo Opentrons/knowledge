@@ -21,15 +21,14 @@ relationships | examples | constraints | source_files
 
 ## Phase 6: Corpus assembly — done
 
-## Phase 7: Indexes — done
-
-## Phase 8: Packaging — done
+## Phase 7: Packaging — done
 
 Publication formats are `opentrons-knowledge-<version>.tar.zst` (GitHub Releases)
 and `ghcr.io/opentrons/opentrons-knowledge:<version>` (ORAS/OCI).
-No lookup consumer API; on-disk JSONL + indexes are the interface.
+No lookup consumer API; on-disk JSONL under `corpus/` is the interface.
+No shipped indexes or embeddings.
 
-## Phase 9: CI and release automation — done
+## Phase 8: CI and release automation — done
 
 ## Tradeoffs
 
@@ -37,4 +36,3 @@ No lookup consumer API; on-disk JSONL + indexes are the interface.
 - AI v1 guides are monorepo paths pinned to the latest `ai-server@*` tag; `pd/` is excluded.
 - Full 9.1.1 corpus build expects a local Opentrons checkout or network clone.
 - CI default path builds a tiny fixture corpus for determinism.
-- Vector indexes from remote embedding APIs are not guaranteed byte-identical.

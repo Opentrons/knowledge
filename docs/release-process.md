@@ -3,7 +3,7 @@
 1. Create or update `corpora/<version>/source-manifest.yaml`.
 2. Validate pinned sources and compatibility records.
 3. Build the corpus (`opentrons-knowledge build --manifest ...`).
-4. Review build, source, compatibility, duplication, and indexing reports.
+4. Review build, source, compatibility, and duplication reports.
 5. Run lint, typecheck, and tests (`just ci`).
 6. Run `opentrons-knowledge validate` / `verify`.
 7. Pack: `opentrons-knowledge pack --corpus dist/opentrons-knowledge-<version>`.
@@ -21,7 +21,6 @@
 - Builder version
 - Corpus schema version
 - Major knowledge additions / corrections / removals
-- Index or embedding changes
 - Compatibility status
 - Artifact filename and sha256
 - OCI reference and digest (`ghcr.io/opentrons/opentrons-knowledge:<version>`)

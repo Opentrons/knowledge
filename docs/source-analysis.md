@@ -155,7 +155,7 @@ Preserve original JSON plus normalized entities (`LabwareDefinition`,
 ## Opentrons AI v1 Paths
 
 Pinned to the latest `ai-server@*` tag (currently `ai-server@0.0.22` on
-`9.1.2-k2`; earlier corpora remain on `ai-server@0.0.20`), not the
+`9.1.2-k3`; earlier corpora remain on `ai-server@0.0.20`), not the
 robot-stack release commit.
 
 ```text

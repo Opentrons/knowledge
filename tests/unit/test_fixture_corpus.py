@@ -20,8 +20,7 @@ def test_fixture_corpus_build_and_validate(tmp_path: Path) -> None:
     assert manifest.record_counts["symbols"] >= 1
     assert manifest.record_counts["entities"] >= 1
     assert manifest.record_counts["documents"] >= 1
-    assert (result.corpus_root / "indexes" / "lexical" / "symbols.json").exists()
-    assert (result.corpus_root / "indexes" / "vector" / "embeddings.jsonl.zst").exists()
+    assert not (result.corpus_root / "indexes").exists()
     assert (result.corpus_root / "AGENTS.md").exists()
     assert (result.corpus_root / "llms.txt").exists()
     assert (result.corpus_root / "docs" / "agent-usage.md").exists()

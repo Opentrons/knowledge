@@ -94,12 +94,6 @@ processing:
   relationship_model_version: 1
   chunking_strategy: semantic-sections-v1
 
-embedding:
-  enabled: true
-  provider: fake
-  model: fake-hash-v1
-  dimensions: 32
-
 publication:
   formats:
     - tar.zst

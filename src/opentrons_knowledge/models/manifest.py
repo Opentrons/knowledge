@@ -73,14 +73,6 @@ class ProcessingInfo(StrictModel):
     chunking_strategy: str = "semantic-sections-v1"
 
 
-class EmbeddingInfo(StrictModel):
-    enabled: bool = False
-    provider: str | None = None
-    model: str | None = None
-    dimensions: int | None = None
-    preprocessing_version: int = 1
-
-
 class PublicationInfo(StrictModel):
     """How the corpus is packaged for distribution."""
 
@@ -95,7 +87,6 @@ class SourceManifest(StrictModel):
     sources: dict[str, SourceEntry]
     builder: BuilderInfo
     processing: ProcessingInfo = Field(default_factory=ProcessingInfo)
-    embedding: EmbeddingInfo = Field(default_factory=EmbeddingInfo)
     publication: PublicationInfo = Field(default_factory=PublicationInfo)
     authority_precedence: list[AuthorityLevel] = Field(
         default_factory=lambda: list(DEFAULT_AUTHORITY_PRECEDENCE)
@@ -137,7 +128,6 @@ class CorpusManifest(StrictModel):
     corpus_schema_version: int
     builder: BuilderInfo
     processing: ProcessingInfo
-    embedding: EmbeddingInfo
     publication: PublicationInfo
     sources: list[ResolvedSource]
     authority_precedence: list[AuthorityLevel]

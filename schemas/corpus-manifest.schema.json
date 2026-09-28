@@ -20,7 +20,6 @@
     "corpus_schema_version": { "type": "integer", "minimum": 1 },
     "builder": { "type": "object" },
     "processing": { "type": "object" },
-    "embedding": { "type": "object" },
     "publication": { "type": "object" },
     "sources": { "type": "array" },
     "authority_precedence": { "type": "array" },
