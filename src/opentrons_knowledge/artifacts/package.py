@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from opentrons_knowledge.artifacts.raw_sources import validate_raw_layout
 from opentrons_knowledge.errors import CorpusValidationError
 from opentrons_knowledge.models.manifest import CorpusManifest
 from opentrons_knowledge.normalization.serialize import (
@@ -75,6 +76,10 @@ def validate_corpus_dir(corpus_root: Path) -> CorpusManifest:
         if not (corpus_root / "corpus" / name).exists():
             raise CorpusValidationError(f"Missing corpus/{name}")
 
+    data = load_yaml(manifest_path)
+    manifest = CorpusManifest.model_validate(data)
+    validate_raw_layout(corpus_root, [s.key for s in manifest.sources])
+
     expected = read_checksums(checksums_path)
     actual = compute_checksums(corpus_root)
     # checksums.txt is excluded from both
@@ -88,8 +93,7 @@ def validate_corpus_dir(corpus_root: Path) -> CorpusManifest:
             f"Checksum mismatch: missing={missing} extra={extra} changed={changed[:20]}"
         )
 
-    data = load_yaml(manifest_path)
-    return CorpusManifest.model_validate(data)
+    return manifest
 
 
 def inspect_corpus(corpus_root: Path) -> dict[str, Any]:
@@ -158,7 +162,8 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
                 "",
                 "## Data",
                 "",
-                "- corpus/*.jsonl.zst: canonical records (build your own indexes)",
+                "- raw/: verbatim pinned source files (monorepo layout per source key)",
+                "- corpus/*.jsonl.zst: normalized records (build your own indexes)",
                 "- schemas/: JSON schemas",
                 "- reports/: build and compatibility reports",
                 "",

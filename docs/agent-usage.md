@@ -27,9 +27,14 @@ opentrons-knowledge-9.1.1-k1.tar.zst
 ghcr.io/opentrons/opentrons-knowledge:9.1.1-k1
 ```
 
+Published artifacts include two layers for the same pins:
+
+- **`raw/`**: verbatim source files (monorepo paths under each manifest source key)
+- **`corpus/`**: normalized JSONL records (sections, symbols, entities, …)
+
 This project **does not** ship lexical indexes, vector indexes, embeddings, or
-re-ranking. Consumers build whatever retrieval stack they need from the canonical
-records.
+re-ranking. Consumers build whatever retrieval stack they need from `raw/` and/or
+`corpus/`.
 
 ## How to obtain and open
 
@@ -56,6 +61,10 @@ AGENTS.md
 llms.txt
 docs/agent-usage.md
 checksums.txt
+raw/
+  README.md
+  manifest.yaml
+  <source_key>/...
 corpus/
   documents.jsonl.zst
   sections.jsonl.zst
@@ -75,6 +84,7 @@ Records are deterministic JSONL (zstd), sorted by primary id.
 
 | Question type | Start with |
 |---------------|------------|
+| Verbatim source file at a pin | `raw/<source_key>/...` or `raw/manifest.yaml` |
 | API method / class behavior | `corpus/code-symbols.jsonl.zst` |
 | Labware / pipette / module identity | `corpus/entities.jsonl.zst` (+ `raw_source`) |
 | How-to / narrative | `corpus/sections.jsonl.zst` / `documents.jsonl.zst` |

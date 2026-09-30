@@ -10,6 +10,10 @@ dist/opentrons-knowledge-<version>/
     agent-usage.md          # full agent consumption guide
   manifest.yaml
   checksums.txt
+  raw/
+    README.md
+    manifest.yaml
+    <source_key>/          # verbatim monorepo paths for that pin
   corpus/
     documents.jsonl.zst
     sections.jsonl.zst
@@ -30,6 +34,7 @@ dist/opentrons-knowledge-<version>/
 
 Logical separation is stable even if compression formats evolve:
 
+- verbatim pinned sources under `raw/` (monorepo layout per manifest source key)
 - canonical normalized data under `corpus/`
 - schemas under `schemas/`
 - reports under `reports/`

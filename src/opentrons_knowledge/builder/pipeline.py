@@ -23,6 +23,7 @@ from opentrons_knowledge.artifacts.package import (
     write_build_reports,
     write_manifest,
 )
+from opentrons_knowledge.artifacts.raw_sources import copy_raw_sources
 from opentrons_knowledge.compatibility.validate import validate_compatibility
 from opentrons_knowledge.docs.markdown import ingest_docs_tree
 from opentrons_knowledge.models.enums import AuthorityLevel, CompatibilityStatus
@@ -210,6 +211,8 @@ def build_corpus(
         schemas_dir = repo_root / "schemas"
     copy_schemas(schemas_dir, corpus_root / "schemas")
     copy_agent_guides(repo_root, corpus_root)
+    raw_counts = copy_raw_sources(corpus_root, materialized.sources)
+    counts["raw_files"] = sum(raw_counts.values())
 
     duration = time.perf_counter() - started
     excluded = [s for s in source_files if s.status == "excluded"]
@@ -220,6 +223,7 @@ def build_corpus(
             "version": version,
             "duration_seconds": round(duration, 3),
             "record_counts": counts,
+            "raw_file_counts": raw_counts,
             "source_files_included": len(included),
             "source_files_excluded": len(excluded),
             "duplicates_detected": len(graph.duplicates),
@@ -265,6 +269,7 @@ def build_corpus(
         record_counts=counts,
         metadata={
             "compatibility_overall": compat_report.overall_status.value,
+            "raw_file_counts": raw_counts,
         },
     )
     write_manifest(corpus_root, corpus_manifest)
@@ -283,6 +288,7 @@ def build_corpus(
         version=version,
         path=str(corpus_root),
         counts=counts,
+        raw_counts=raw_counts,
         duration=round(duration, 3),
     )
     return BuildResult(corpus_root=corpus_root, manifest=corpus_manifest, duration_seconds=duration)
@@ -497,6 +503,8 @@ def _build_from_materialized(
     repo_root = Path(__file__).resolve().parents[3]
     copy_schemas(schemas_dir, corpus_root / "schemas")
     copy_agent_guides(repo_root, corpus_root)
+    raw_counts = copy_raw_sources(corpus_root, materialized.sources)
+    counts["raw_files"] = sum(raw_counts.values())
     duration = time.perf_counter() - started
     write_build_reports(
         corpus_root / "reports",
@@ -505,6 +513,7 @@ def _build_from_materialized(
                 "version": version,
                 "duration_seconds": round(duration, 3),
                 "record_counts": counts,
+                "raw_file_counts": raw_counts,
                 "fixture": True,
             },
             "source-report": {
@@ -532,6 +541,7 @@ def _build_from_materialized(
             build_timestamp="1970-01-01T00:00:00+00:00",
         ),
         record_counts=counts,
+        metadata={"raw_file_counts": raw_counts},
     )
     write_manifest(corpus_root, corpus_manifest)
     finalize_checksums(corpus_root)

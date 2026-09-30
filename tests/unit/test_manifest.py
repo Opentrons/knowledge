@@ -133,6 +133,13 @@ def test_load_real_912_k3_manifest() -> None:
     assert manifest.sources["opentrons_ai_v1"].commit.startswith("0b6a6ecd")
 
 
+def test_load_real_1000_k2_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k2" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "10.0.0-k2"
+    assert manifest.sources["protocol_api"].commit.startswith("e8c6d0a4")
+
+
 def test_load_real_1000_k1_manifest() -> None:
     path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k1" / "source-manifest.yaml"
     manifest = load_source_manifest(path)

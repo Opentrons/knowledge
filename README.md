@@ -64,6 +64,15 @@ uv run opentrons-knowledge build \
 uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-10.0.0-k1
 uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-10.0.0-k1
 
+# 10.0.0-k2: same pins as k1; adds raw/ verbatim source trees (see RELEASE-NOTES)
+uv run opentrons-knowledge build \
+  --manifest corpora/10.0.0-k2/source-manifest.yaml \
+  --opentrons-repo ../opentrons \
+  --output dist
+
+uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-10.0.0-k2
+uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-10.0.0-k2
+
 # 9.1.2-k2 (superseded by k3 for new consumers)
 # uv run opentrons-knowledge build --manifest corpora/9.1.2-k2/source-manifest.yaml ...
 ```

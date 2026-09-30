@@ -24,6 +24,9 @@ def test_fixture_corpus_build_and_validate(tmp_path: Path) -> None:
     assert (result.corpus_root / "AGENTS.md").exists()
     assert (result.corpus_root / "llms.txt").exists()
     assert (result.corpus_root / "docs" / "agent-usage.md").exists()
+    assert (result.corpus_root / "raw" / "manifest.yaml").exists()
+    assert (result.corpus_root / "raw" / "protocol_api").is_dir()
+    assert manifest.record_counts.get("raw_files", 0) >= 1
     assert "tar.zst" in (result.corpus_root / "AGENTS.md").read_text(encoding="utf-8")
 
     corpus = Corpus.open(result.corpus_root)

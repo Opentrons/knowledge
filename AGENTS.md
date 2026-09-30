@@ -20,8 +20,9 @@ The product is the **corpus artifact** (same bytes as a directory, shipped as
    - `opentrons-knowledge-<version>.tar.zst` (GitHub Release or local `pack`), or
    - `ghcr.io/opentrons/opentrons-knowledge:<version>` via `opentrons-knowledge pull`
 2. Open the unpacked directory.
-3. Read `manifest.yaml`, then `corpus/*.jsonl.zst` with your own retrieval stack
-   (this package does not ship indexes or embeddings).
+3. Read `manifest.yaml`. Use `raw/` for verbatim pinned sources, or
+   `corpus/*.jsonl.zst` for normalized records (this package does not ship
+   indexes or embeddings).
 
 ```bash
 opentrons-knowledge unpack opentrons-knowledge-9.1.1-k1.tar.zst --output dist
