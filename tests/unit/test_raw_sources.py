@@ -34,7 +34,9 @@ def test_copy_raw_sources_honors_exclude_paths(tmp_path: Path) -> None:
     }
     counts = copy_raw_sources(corpus_root, sources)
     assert counts["opentrons_ai_v1"] == 1
-    assert (corpus_root / "raw/opentrons_ai_v1/opentrons-ai-server/api/storage/docs/deck_layout.md").is_file()
-    assert not (
+    deck = corpus_root / "raw/opentrons_ai_v1/opentrons-ai-server/api/storage/docs/deck_layout.md"
+    assert deck.is_file()
+    pd_secret = (
         corpus_root / "raw/opentrons_ai_v1/opentrons-ai-server/api/storage/docs/pd/secret.md"
-    ).exists()
+    )
+    assert not pd_secret.exists()
