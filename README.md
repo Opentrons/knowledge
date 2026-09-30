@@ -55,6 +55,15 @@ uv run opentrons-knowledge build \
 uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-9.1.2-k3
 uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-9.1.2-k3
 
+# 10.0.0-k1: v10.0.0 + mkdocs-2026-09-30 + ai-server@0.0.22
+uv run opentrons-knowledge build \
+  --manifest corpora/10.0.0-k1/source-manifest.yaml \
+  --opentrons-repo ../opentrons \
+  --output dist
+
+uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-10.0.0-k1
+uv run opentrons-knowledge pack --corpus dist/opentrons-knowledge-10.0.0-k1
+
 # 9.1.2-k2 (superseded by k3 for new consumers)
 # uv run opentrons-knowledge build --manifest corpora/9.1.2-k2/source-manifest.yaml ...
 ```

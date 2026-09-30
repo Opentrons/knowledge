@@ -133,6 +133,22 @@ def test_load_real_912_k3_manifest() -> None:
     assert manifest.sources["opentrons_ai_v1"].commit.startswith("0b6a6ecd")
 
 
+def test_load_real_1000_k1_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k1" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "10.0.0-k1"
+    assert manifest.corpus.target_opentrons_release == "v10.0.0"
+    assert manifest.sources["protocol_api"].tag == "v10.0.0"
+    assert manifest.sources["protocol_api"].commit.startswith("e8c6d0a4")
+    assert manifest.sources["shared_data"].commit == manifest.sources["protocol_api"].commit
+    assert manifest.sources["opentrons_docs"].tag == "mkdocs-2026-09-30"
+    assert manifest.sources["opentrons_docs"].commit.startswith("00f1431b")
+    assert manifest.sources["opentrons_docs"].compatibility.status == CompatibilityStatus.VALIDATED
+    assert manifest.sources["opentrons_ai_v1"].tag == "ai-server@0.0.22"
+    assert manifest.sources["opentrons_ai_v1"].commit.startswith("0b6a6ecd")
+    assert "pd" in "".join(manifest.sources["opentrons_ai_v1"].exclude_paths)
+
+
 def test_source_requires_commit_or_tag() -> None:
     with pytest.raises(ValidationError):
         SourceEntry(

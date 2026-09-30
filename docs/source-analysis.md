@@ -52,6 +52,27 @@ Docs deployment is intentionally decoupled from robot-stack tags (see
 post-release MkDocs tag that documents the 9.1.x / API 2.29 surface, and record
 that relationship as `validated` rather than `exact-release`.
 
+## Resolved Pins for `10.0.0-k1`
+
+| Source | Pin | Commit | Compatibility |
+|--------|-----|--------|---------------|
+| Protocol API | tag `v10.0.0` | `e8c6d0a424c25fff1604e2a02e4ccaedac95b9af` | `exact-release` |
+| Shared data | same as release | `e8c6d0a424c25fff1604e2a02e4ccaedac95b9af` | `exact-release` |
+| Public docs | tag `mkdocs-2026-09-30` | `00f1431babdf36a11ec68143c009d5fc889b2478` | `validated` |
+| Opentrons AI v1 guides | tag `ai-server@0.0.22` | `0b6a6ecd2d6e040e02f40bd1d44193cfc42b33dc` | `validated` |
+
+At `v10.0.0`, `docs/python-api/mkdocs.yml` already reports:
+
+```text
+apiLevel: 2.30
+robot_stack_version: 10.0.0
+```
+
+The post-release MkDocs deploy tag `mkdocs-2026-09-30` reports the same
+metadata and includes doc updates after the stack release. We still pin the
+deploy tag (relationship `docs-deploy-tag-for-10.0.x`) so the corpus tracks
+production docs, not only the release commit snapshot.
+
 ## Source Repositories
 
 Primary repository for all initial sources:
@@ -155,8 +176,8 @@ Preserve original JSON plus normalized entities (`LabwareDefinition`,
 ## Opentrons AI v1 Paths
 
 Pinned to the latest `ai-server@*` tag (currently `ai-server@0.0.22` on
-`9.1.2-k3`; earlier corpora remain on `ai-server@0.0.20`), not the
-robot-stack release commit.
+`9.1.2-k2` / `9.1.2-k3` / `10.0.0-k1`; earlier corpora remain on
+`ai-server@0.0.20`), not the robot-stack release commit.
 
 ```text
 opentrons-ai-server/api/storage/docs/
