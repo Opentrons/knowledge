@@ -107,11 +107,15 @@ reports/
   retrieval-eval.json        # full grid results, ablations, winner misses
 ```
 
-The passage that a result shows is the first stored `text` value. Identifier
-terms are a second value of that field: they match, and they are not the text
-we return. The API index adds a `symbol` field that keeps each public name as
-one token (`ProtocolContext.load_module` does not split into `load` and
-`module`). Schema version is 2, because the bundle no longer has a single index.
+Identifier terms are a second value of the `text` field: they match, and they
+are not part of the passage a result shows. A section may be stored as several
+chunks (one per tab, or a long section split at a block boundary). A search hit
+returns every chunk of that section, in order, so the passage includes the
+content under the heading rather than only the piece that matched. The API
+index adds a `symbol` field that keeps each public name as one token
+(`ProtocolContext.load_module` does not split into `load` and `module`). Each
+API section is already one chunk. Schema version is 2, because the bundle no
+longer has a single index.
 
 ## Determinism
 
@@ -125,9 +129,12 @@ those are runtime state and are excluded from corpus checksums and archives.
 
 ## Consumer impact
 
-- Register two tools. `search_api` reads `retrieval/api/bm25/`. `search_docs`
-  reads `retrieval/docs/bm25/`. Query shapes are in
-  [retrieval-tool.md](retrieval-tool.md).
+- Register three tools. `search_api` reads `retrieval/api/bm25/`. `search_docs`
+  reads `retrieval/docs/bm25/`. `search_all` runs both and merges the lists. Query
+  shapes are in [retrieval-tool.md](retrieval-tool.md).
+- A merged search over both indexes is a query-time step (reciprocal rank
+  fusion, rule in [retrieval-experiments.md](retrieval-experiments.md#merging-the-two-indexes)).
+  Nothing extra is stored in the bundle.
 - Adding dense retrieval later means a vector file aligned to `chunks.jsonl.zst`,
   measured on the same questions before it ships.
 - Chunk and retrieval ids are unique by construction.

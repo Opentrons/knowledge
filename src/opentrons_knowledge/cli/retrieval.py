@@ -24,6 +24,7 @@ from opentrons_knowledge.retrieval.build import build_retrieval
 from opentrons_knowledge.retrieval.bundle import API_INDEX, DOCS_INDEX, open_index, validate_bundle
 from opentrons_knowledge.retrieval.documents import build_retrieval_documents, load_retrieval_inputs
 from opentrons_knowledge.retrieval.evaluation import load_queries, report_markdown, run_experiments
+from opentrons_knowledge.retrieval.fusion import fused_search
 from opentrons_knowledge.retrieval.models import (
     Chunk,
     ChunkingStrategy,
@@ -31,6 +32,12 @@ from opentrons_knowledge.retrieval.models import (
     RetrievalDocument,
     RetrievalKind,
 )
+from opentrons_knowledge.retrieval.passages import Passage, passages_for_hits
+
+# Longest section in the 10.0.0-k3 docs index is 6 chunks. Fetching this many
+# chunks per requested hit keeps `limit` as a count of sections after siblings
+# of one section collapse into a single passage.
+_CHUNKS_PER_SECTION = 8
 
 _console = Console()
 
@@ -132,7 +139,9 @@ def validate_cmd(bundle: Path = _BUNDLE) -> None:
 def search_cmd(
     query: str = typer.Argument(...),
     bundle: Path = _BUNDLE,
-    index: str = typer.Option("all", "--index", help="api, docs, or all."),
+    index: str = typer.Option(
+        "all", "--index", help="api, docs, or all (one ranked list from both)."
+    ),
     limit: int = typer.Option(5, "--limit", "-k"),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
@@ -149,7 +158,9 @@ def search_cmd(
 @retrieval_app.command("explore")
 def explore_cmd(
     bundle: Path = _BUNDLE,
-    index: str = typer.Option("all", "--index", help="api, docs, or all."),
+    index: str = typer.Option(
+        "all", "--index", help="api, docs, or all (one ranked list from both)."
+    ),
     limit: int = typer.Option(5, "--limit", "-k"),
 ) -> None:
     """Interactive search. Type a query, or /api, /docs, /all, /k N, /open N, /quit."""
@@ -280,34 +291,34 @@ def _load(bundle: Path) -> _Bundle:
 def _search(
     loaded: _Bundle, query: str, which: Literal["api", "docs", "all"], limit: int
 ) -> list[_Hit]:
-    hits: list[_Hit] = []
-    if which in {"api", "all"}:
-        hits.extend(_hydrate(loaded, "api", search_api(loaded.api, query, limit)))
-    if which in {"docs", "all"}:
-        hits.extend(_hydrate(loaded, "docs", search(loaded.docs, query, limit)))
-    return hits
-
-
-def _hydrate(loaded: _Bundle, index: str, found: list[tuple[str, float]]) -> list[_Hit]:
-    hits: list[_Hit] = []
-    for chunk_id, score in found:
-        chunk = loaded.chunks[chunk_id]
-        doc = loaded.documents[chunk["retrieval_id"]]
-        hits.append(
-            _Hit(
-                index=index,
-                score=score,
-                chunk_id=chunk_id,
-                retrieval_id=doc["retrieval_id"],
-                title=doc["title"],
-                heading=" > ".join(doc.get("heading_path") or []),
-                url=doc.get("url") or doc.get("source_url"),
-                api_name=doc.get("api_name"),
-                doc_type=doc.get("doc_type") or "",
-                text=chunk["text"],
-            )
+    fetch = limit * _CHUNKS_PER_SECTION
+    if which == "all":
+        fused = fused_search(
+            query, loaded.api, loaded.docs, loaded.chunks, limit=limit, fetch=fetch
         )
-    return hits
+        return [_to_hit(loaded, item.index, item.passage) for item in fused]
+    if which == "api":
+        found = search_api(loaded.api, query, fetch)
+    else:
+        found = search(loaded.docs, query, fetch)
+    passages = passages_for_hits(found, loaded.chunks, limit=limit)
+    return [_to_hit(loaded, which, passage) for passage in passages]
+
+
+def _to_hit(loaded: _Bundle, index: str, passage: Passage) -> _Hit:
+    doc = loaded.documents[passage.retrieval_id]
+    return _Hit(
+        index=index,
+        score=passage.score,
+        chunk_id=passage.chunk_id,
+        retrieval_id=doc["retrieval_id"],
+        title=doc["title"],
+        heading=" > ".join(doc.get("heading_path") or []),
+        url=doc.get("url") or doc.get("source_url"),
+        api_name=doc.get("api_name"),
+        doc_type=doc.get("doc_type") or "",
+        text=passage.text,
+    )
 
 
 def _render(query: str, hits: list[_Hit], which: str) -> None:

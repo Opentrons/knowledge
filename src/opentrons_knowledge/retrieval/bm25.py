@@ -1,9 +1,10 @@
 """Tantivy indexes for the two searches this corpus ships.
 
 ``docs`` is BM25 over passages: how-to pages, manuals, and shared-data entities
-(labware, pipettes, modules). The passage is the first stored ``text`` value.
+(labware, pipettes, modules). Each stored ``text`` value is one chunk.
 Identifier terms are a second value of the same field, so they match without
-becoming part of the passage a result shows.
+becoming part of the text. A result assembles every chunk of the matched
+section; see ``passages.section_passage``.
 
 ``api`` is the Python API reference, one section per documented symbol. Names
 are stored untokenized on ``symbol``. A query searches ``symbol`` first and
@@ -200,6 +201,24 @@ def search_api(index: tantivy.Index, query: str, limit: int = 10) -> list[tuple[
         return exact
     prose, _errors = index.parse_query_lenient(query, ["text"])
     return _hits(index, prose, limit)
+
+
+def names_symbol(index: tantivy.Index, query: str) -> bool:
+    """Return True when the query is one token that names a documented symbol.
+
+    Args:
+        index: An index built by ``build_api_index``.
+        query: The caller's query.
+
+    Returns:
+        True for ``InstrumentContext.blow_out``, ``blow_out``, or any other single
+        token that matches a ``symbol`` value. False for a question, which has
+        several words.
+    """
+    if len(query.split()) != 1:
+        return False
+    names, _errors = index.parse_query_lenient(query, ["symbol"])
+    return bool(_hits(index, names, 1))
 
 
 def _writer(schema: tantivy.Schema, path: Path | None) -> tuple[tantivy.Index, tantivy.IndexWriter]:

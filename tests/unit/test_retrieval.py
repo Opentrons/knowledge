@@ -37,6 +37,7 @@ from opentrons_knowledge.retrieval.evaluation import (
     run_config,
     select_winner,
 )
+from opentrons_knowledge.retrieval.fusion import fused_search, reciprocal_rank_fusion
 from opentrons_knowledge.retrieval.models import (
     ChunkingStrategy,
     Enrichment,
@@ -46,6 +47,7 @@ from opentrons_knowledge.retrieval.models import (
     RetrievalKind,
     Segment,
 )
+from opentrons_knowledge.retrieval.passages import passages_for_hits
 from opentrons_knowledge.retrieval.render import render_blocks
 
 REPO = "https://github.com/Opentrons/opentrons"
@@ -484,6 +486,97 @@ def test_api_name_lookup_beats_a_page_that_only_mentions_it() -> None:
     assert search_api(index, "load_module", 5)[0][0] == chunks[0].chunk_id
 
 
+def test_a_block_split_still_returns_the_rest_of_the_section() -> None:
+    """A match on the opening of a long section includes the blocks that follow."""
+    intro = "Flex exclusive features live only on Flex."
+    later = "pipette throughput " + ("wide column " * 250)
+    doc = _retrieval_doc(
+        "doc:flex/introduction/#flex-exclusive-features",
+        "Flex-exclusive features",
+        f"{intro}\n\n{later}",
+        doc_type="hardware_manual",
+    ).model_copy(update={"segments": [Segment(text=intro), Segment(text=later)]})
+    chunks = chunk_documents([doc], ChunkingStrategy.STRUCTURED, Enrichment.CONTEXT_TERMS)
+    assert len(chunks) == 2
+    index = build_index(chunks, {doc.retrieval_id: doc})
+    found = search(index, "flex exclusive features", 5)
+    stored = {chunk.chunk_id: chunk.model_dump() for chunk in chunks}
+    passage = passages_for_hits(found, stored, limit=1)[0]
+    assert passage.retrieval_id == doc.retrieval_id
+    assert intro in passage.text
+    assert "pipette throughput" in passage.text
+    assert any("pipette throughput" not in chunk.text for chunk in chunks)
+
+
+def test_a_tab_split_still_returns_every_variant() -> None:
+    """A match on the prose above a tab set includes both tab bodies."""
+    intro = "This protocol uses building block commands."
+    doc = _retrieval_doc(
+        "doc:python-api/examples/#basic-method",
+        "Basic method",
+        intro,
+        doc_type="example",
+    ).model_copy(
+        update={
+            "segments": [
+                Segment(text=intro),
+                Segment(label="Flex", text="flex pipette.dispense(100, plate['B1'])"),
+                Segment(label="OT-2", text="ot2 pipette.drop_tip()"),
+            ]
+        }
+    )
+    chunks = chunk_documents([doc], ChunkingStrategy.STRUCTURED, Enrichment.CONTEXT)
+    assert len(chunks) == 3
+    index = build_index(chunks, {doc.retrieval_id: doc})
+    found = search(index, "building block commands", 5)
+    stored = {chunk.chunk_id: chunk.model_dump() for chunk in chunks}
+    passage = passages_for_hits(found, stored, limit=1)[0]
+    assert "flex pipette.dispense" in passage.text
+    assert "ot2 pipette.drop_tip" in passage.text
+
+
+def test_reciprocal_rank_fusion_weights_and_ties() -> None:
+    fused = reciprocal_rank_fusion([(["a", "b"], 1.0), (["c", "a"], 0.5)])
+    assert [rid for rid, _ in fused] == ["a", "b", "c"]
+    tie = reciprocal_rank_fusion([(["docs"], 1.0), (["api"], 1.0)])
+    assert [rid for rid, _ in tie] == ["docs", "api"]
+    prose = reciprocal_rank_fusion([(["api"], 0.5), (["docs"], 1.0)])
+    assert [rid for rid, _ in prose] == ["docs", "api"]
+
+
+def test_fused_search_puts_a_symbol_name_first_and_a_question_docs_first() -> None:
+    mention = _retrieval_doc(
+        "doc:python-api/modules/loading/#loading-modules",
+        "Loading modules",
+        "Call ProtocolContext.load_module to load a module. " * 8,
+        doc_type="module_guide",
+    )
+    method = _retrieval_doc(
+        "doc:python-api/reference/protocols/#opentrons.protocol_api.ProtocolContext.load_module",
+        "load_module",
+        "load_module(module_name, location) -> ModuleContext. Loads a module onto the deck.",
+        api_name="opentrons.protocol_api.ProtocolContext.load_module",
+        doc_type="api_reference",
+    )
+    docs = {doc.retrieval_id: doc for doc in (mention, method)}
+    api_chunks = chunk_documents([method], ChunkingStrategy.SECTION, Enrichment.CONTEXT_TERMS)
+    doc_chunks = chunk_documents([mention], ChunkingStrategy.SECTION, Enrichment.CONTEXT_TERMS)
+    chunks = {chunk.chunk_id: chunk.model_dump() for chunk in [*api_chunks, *doc_chunks]}
+    api_index = build_api_index(api_chunks, docs)
+    docs_index = build_index(doc_chunks, docs)
+
+    by_name = fused_search("ProtocolContext.load_module", api_index, docs_index, chunks, limit=3)
+    assert by_name[0].index == "api"
+    assert by_name[0].passage.retrieval_id == method.retrieval_id
+
+    by_question = fused_search(
+        "loading modules onto the deck", api_index, docs_index, chunks, limit=3
+    )
+    assert by_question[0].index == "docs"
+    assert by_question[0].passage.retrieval_id == mention.retrieval_id
+    assert any(item.passage.retrieval_id == method.retrieval_id for item in by_question)
+
+
 def _retrieval_doc(
     retrieval_id: str,
     title: str,
@@ -508,3 +601,12 @@ def _retrieval_doc(
         aliases=[api_name.rsplit(".", 1)[-1]] if api_name else [],
         content_hash="h",
     )
+
+
+def test_tool_guide_registers_three_tools() -> None:
+    """The agent guide names the API, docs, and merged search tools exactly once each."""
+    guide = (Path(__file__).resolve().parents[2] / "docs" / "retrieval-tool.md").read_text(
+        encoding="utf-8"
+    )
+    for name in ("search_api", "search_docs", "search_all"):
+        assert guide.count(f"name: {name}\n") == 1

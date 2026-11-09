@@ -104,7 +104,9 @@ Records are deterministic JSONL (zstd), sorted by primary id.
 | Python API symbol, signature, parameters | `retrieval/api/bm25/` (exact name, then section text) |
 | Procedure, hardware, labware, module | `retrieval/docs/bm25/` (BM25). Resolve hits through `retrieval/documents.jsonl.zst` |
 
-When `retrieval/` is present, search it as two tools. The API index holds every
+When `retrieval/` is present, register three search tools: `search_api` and
+`search_docs` over the two indexes, and `search_all`, which merges them into one
+ranked list. The API index holds every
 documented symbol (325 on `10.0.0-k3`); a query of `Class.method` returns that
 reference section. The docs index holds the other sections plus labware,
 pipette, and module records, cut the way the evaluation in

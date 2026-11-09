@@ -181,6 +181,43 @@ For example, `python-api/examples/` ranks above the pipette-loading section for
 These misses are the target set for the next experiment: adding a dense index
 with RRF, measured on this same evaluation set.
 
+## Merging the two indexes
+
+A single search over both indexes needs one ranking. Each index scores with its
+own BM25 statistics, so the scores are not comparable. The merge uses only
+positions: reciprocal rank fusion, `sum(weight / (60 + rank))` over the lists
+where a section appears.
+
+Two measured choices:
+
+- **Weight.** The API list gets full weight for a query that names a symbol: a
+  single token that matches the API `symbol` field (`InstrumentContext.blow_out`,
+  `blow_out`). Every other query gives the API list weight 0.5, so the docs
+  list keeps the top place and API sections fill in below it. The sweep was flat
+  across 0.1 to 0.5, and at weight 1.0 the merged list lost the docs ranking
+  (curated MRR 0.369 against 0.619 for docs alone).
+- **Tie.** The list with the higher weight ranks first on a tie. Without this, a
+  symbol name could lose to a docs page that ranked first on the docs index.
+
+Results on the 10.0.0-k3 bundle, 345 queries (105 curated, 240 structural),
+ranked at section level:
+
+| System | curated MRR@10 | curated Hit@5 | structural MRR@10 | structural Hit@10 |
+|---|---|---|---|---|
+| API index only | 0.109 | 0.143 | 0.164 | 0.333 |
+| Docs index only | 0.619 | 0.829 | 0.561 | 0.646 |
+| Previous `all` (API hits, then docs hits) | 0.217 | 0.419 | 0.270 | 0.583 |
+| Merged (shipped rule) | 0.619 | 0.829 | 0.593 | 0.725 |
+
+On the 325 documented symbols, asked by name, the merged list puts the symbol's
+own section first in all 325 cases (the audit is 325 of 325 on the API index alone).
+
+The merge does not improve curated questions, because the docs index already
+ranks them well and the API index adds mostly noise on plain-language
+questions. Its gain is on structural questions, where the API section is the
+right second result. Scores in the merged list are fused scores (about
+0.016 for a first place), not BM25 scores, so compare them within one query only.
+
 ## Reproduce
 
 ```bash

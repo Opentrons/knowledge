@@ -1,11 +1,21 @@
 # Search tools for an Opentrons Knowledge corpus
 
-From `10.0.0-k3`, a corpus ships two indexes under `retrieval/`. Register them
-as two tools. One blended search makes symbol lookup and how-to questions
-compete, and the shorter page that merely mentions a method wins.
+From `10.0.0-k3`, a corpus ships two indexes under `retrieval/`: the Python API
+reference (`api/bm25/`) and everything else (`docs/bm25/`). Register three
+tools over them:
 
-Both tools return passages. Cite `url` and `source_url` from the document, and
+| Tool | Reads | Use it for |
+|---|---|---|
+| `search_api` | `retrieval/api/bm25/` | One symbol: a class, method, parameter, or return value. |
+| `search_docs` | `retrieval/docs/bm25/` | A procedure, hardware fact, labware load name, or module. |
+| `search_all` | Both indexes, merged | When you do not know which one answers the question. |
+
+Each tool returns passages. Cite `url` and `source_url` from the document, and
 the corpus version from `manifest.yaml`.
+
+A hit's `text` is the whole section under that heading. Tabs and long pages
+are stored as more than one chunk; the text you read still includes every
+chunk of the section that matched.
 
 The tokenizer lowercases and splits on punctuation and underscores. It does not
 stem: `loading` and `load` are different words. CamelCase is also stored split
@@ -76,14 +86,60 @@ Examples:
 | A tip rack's load name | `opentrons_96_tiprack_300ul` |
 | Heater-shaker latch | `heater shaker latch` |
 
+## `search_all`
+
+Use this when the question could be a signature or a procedure, or when you
+want the first answer without choosing an index. It runs both searches and
+returns one ranked list. Each hit has an `index` field: `api` for a reference
+section, `docs` for a how-to page or a labware, pipette, or module record.
+
+```text
+name: search_all
+description: |
+  Search the Opentrons Python Protocol API reference and the how-to docs
+  together for this corpus version, and return one ranked list. Each hit has
+  an index field: "api" is a reference section, "docs" is a how-to page or a
+  labware, pipette, or module record.
+  For a symbol, pass Class.method alone (InstrumentContext.blow_out). That
+  symbol's reference section comes first.
+  For a question, pass a few words from a heading or a load name, not a
+  sentence. Drop "how do I" and "what is".
+  Do not mix a symbol and a question in one query. Read the heading path on
+  each hit. Cite url.
+parameters:
+  query: string, required. One symbol, or a few words from a heading.
+```
+
+How the order works, so you can read it:
+
+- A single token that names a symbol (`InstrumentContext.blow_out`, `blow_out`)
+  puts that symbol's reference section first.
+- A query of several words ranks how-to docs first. Reference sections follow
+  below them.
+- A bare member name (`load_labware`) can match more than one class. The first
+  hit is one of them, so call `search_api` with `Class.method` for a specific
+  class.
+- Scores are fused ranks. Compare order within one result list, not the number
+  across calls.
+
+Examples:
+
+| You need | Query | Expect |
+|---|---|---|
+| The blow-out method | `InstrumentContext.blow_out` | `api` first |
+| The labware with a load name | `opentrons_96_tiprack_300ul` | `docs` first |
+| A procedure with no known name | `blow out extra air` | `docs` first |
+
 ## Which tool
 
 | Question | Tool |
 |---|---|
 | What arguments does `aspirate` take? | `search_api`: `InstrumentContext.aspirate` |
 | How do I pick up one column of tips? | `search_docs`: `partial tip pickup column` |
-| Both the steps and the signature | Call both. The how-to and the reference are different pages. |
+| Not sure whether the answer is a signature or a how-to | `search_all` with a few heading words |
+| Both the steps and the signature | Call `search_docs` and `search_api` separately. The how-to and the reference are different pages, and one merged list can show only one of them near the top. |
 | Does this labware exist, and what is its load name? | `search_docs` with the load name or the product name |
 
 Do not send a paragraph. Do not combine a symbol and a procedure in one query.
 If the first hit is a how-to and you needed the signature, call `search_api`.
+</contents>
