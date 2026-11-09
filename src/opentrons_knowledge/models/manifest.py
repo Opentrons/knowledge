@@ -11,6 +11,12 @@ from opentrons_knowledge.models.enums import (
     AuthorityLevel,
     CompatibilityStatus,
 )
+from opentrons_knowledge.retrieval.models import (
+    ChunkingStrategy,
+    Enrichment,
+    RetrievalConfig,
+    RetrievalKind,
+)
 
 
 class StrictModel(BaseModel):
@@ -82,6 +88,76 @@ class PublicationInfo(StrictModel):
     repository: str = "opentrons/opentrons-knowledge"
 
 
+class RenderedDocsConfig(StrictModel):
+    """How to render the Opentrons MkDocs site for canonical document extraction.
+
+    Defaults mirror the Opentrons ``docs-build-deploy`` workflow: ``uv sync``
+    followed by ``make build`` in ``docs/`` with ``CI=true`` (strict build)
+    under the Python version that workflow installs. The Playwright browser
+    install from ``make setup`` is skipped because it is only used for PDFs.
+    """
+
+    source: str = "opentrons_docs"
+    mkdocs_config: str = "docs/mkdocs.yml"
+    working_directory: str = "docs"
+    setup_command: list[str] = Field(default_factory=lambda: ["uv", "sync", "--frozen"])
+    build_command: list[str] = Field(default_factory=lambda: ["make", "build"])
+    site_dir: str = "docs/site"
+    python: str = "3.12"
+    strict: bool = True
+    sparse_paths: list[str] = Field(default_factory=lambda: ["docs", "api", "shared-data"])
+    base_url: str = "https://docs.opentrons.com/"
+    allowed_modifications: list[str] = Field(
+        default_factory=lambda: ["docs/uv.lock"],
+        description=(
+            "Tracked files the build itself may rewrite. `make build` runs `uv run`, which "
+            "re-locks docs/uv.lock when it is stale, exactly as in the production workflow."
+        ),
+    )
+
+    @field_validator("base_url")
+    @classmethod
+    def require_trailing_slash(cls, value: str) -> str:
+        return value if value.endswith("/") else f"{value}/"
+
+    def environment(self) -> dict[str, str]:
+        """Environment overrides applied to the setup and build commands."""
+        env = {"UV_PYTHON": self.python}
+        if self.strict:
+            env["CI"] = "true"
+        return env
+
+
+class RetrievalSettings(StrictModel):
+    """Retrieval bundle to build into the corpus. Needs ``rendered_docs``.
+
+    Defaults are the configuration selected in ``docs/retrieval-experiments.md``.
+    """
+
+    kinds: list[RetrievalKind] = Field(
+        default_factory=lambda: [RetrievalKind.DOC_SECTION, RetrievalKind.ENTITY]
+    )
+    chunking: ChunkingStrategy = ChunkingStrategy.STRUCTURED
+    enrichment: Enrichment = Enrichment.CONTEXT_TERMS
+    tokenizer: Literal["default", "en_stem"] = "default"
+    queries: str | None = Field(
+        default="eval/retrieval/curated.yaml",
+        description="Curated evaluation set, relative to the builder repository root.",
+    )
+    run_experiments: bool = Field(
+        default=True,
+        description="Re-run the full experiment grid and write reports/retrieval-eval.json.",
+    )
+
+    def config(self) -> RetrievalConfig:
+        return RetrievalConfig(
+            kinds=self.kinds,
+            chunking=self.chunking,
+            enrichment=self.enrichment,
+            tokenizer=self.tokenizer,
+        )
+
+
 class SourceManifest(StrictModel):
     corpus: CorpusIdentity
     sources: dict[str, SourceEntry]
@@ -91,6 +167,8 @@ class SourceManifest(StrictModel):
     authority_precedence: list[AuthorityLevel] = Field(
         default_factory=lambda: list(DEFAULT_AUTHORITY_PRECEDENCE)
     )
+    rendered_docs: RenderedDocsConfig | None = None
+    retrieval: RetrievalSettings | None = None
 
     @model_validator(mode="after")
     def require_core_sources(self) -> SourceManifest:
@@ -98,6 +176,12 @@ class SourceManifest(StrictModel):
         missing = required - set(self.sources)
         if missing:
             msg = f"Source manifest missing required sources: {sorted(missing)}"
+            raise ValueError(msg)
+        if self.rendered_docs and self.rendered_docs.source not in self.sources:
+            msg = f"rendered_docs.source '{self.rendered_docs.source}' is not a declared source"
+            raise ValueError(msg)
+        if self.retrieval and not self.rendered_docs:
+            msg = "retrieval requires rendered_docs (it is built from canonical documents)"
             raise ValueError(msg)
         return self
 

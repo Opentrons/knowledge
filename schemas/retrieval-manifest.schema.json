@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/retrieval-manifest.schema.json",
+  "$defs": {
+    "ChunkingStrategy": {
+      "description": "How retrieval documents are cut into indexed chunks.",
+      "enum": [
+        "section",
+        "structured",
+        "window",
+        "small"
+      ],
+      "title": "ChunkingStrategy",
+      "type": "string"
+    },
+    "Enrichment": {
+      "description": "What, besides the body, goes into a chunk's indexed text.",
+      "enum": [
+        "plain",
+        "context",
+        "context_terms"
+      ],
+      "title": "Enrichment",
+      "type": "string"
+    },
+    "RetrievalConfig": {
+      "additionalProperties": false,
+      "description": "One point in the experiment grid, and the shipped configuration.",
+      "properties": {
+        "kinds": {
+          "items": {
+            "$ref": "#/$defs/RetrievalKind"
+          },
+          "title": "Kinds",
+          "type": "array"
+        },
+        "chunking": {
+          "$ref": "#/$defs/ChunkingStrategy"
+        },
+        "enrichment": {
+          "$ref": "#/$defs/Enrichment"
+        },
+        "tokenizer": {
+          "default": "default",
+          "enum": [
+            "default",
+            "en_stem"
+          ],
+          "title": "Tokenizer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kinds",
+        "chunking",
+        "enrichment"
+      ],
+      "title": "RetrievalConfig",
+      "type": "object"
+    },
+    "RetrievalKind": {
+      "enum": [
+        "doc_section",
+        "api_symbol",
+        "entity",
+        "guide_section"
+      ],
+      "title": "RetrievalKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {
+      "default": "opentrons-knowledge.retrieval",
+      "title": "Schema Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 2,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "corpus_version": {
+      "title": "Corpus Version",
+      "type": "string"
+    },
+    "builder_version": {
+      "title": "Builder Version",
+      "type": "string"
+    },
+    "config": {
+      "$ref": "#/$defs/RetrievalConfig"
+    },
+    "tantivy_version": {
+      "title": "Tantivy Version",
+      "type": "string"
+    },
+    "document_count": {
+      "title": "Document Count",
+      "type": "integer"
+    },
+    "chunk_count": {
+      "title": "Chunk Count",
+      "type": "integer"
+    },
+    "query_count": {
+      "title": "Query Count",
+      "type": "integer"
+    },
+    "kind_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Kind Counts",
+      "type": "object"
+    },
+    "index_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "description": "Chunks in each shipped index.",
+      "title": "Index Counts",
+      "type": "object"
+    },
+    "files": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "sha256 per file, relative to the bundle.",
+      "title": "Files",
+      "type": "object"
+    },
+    "evaluation": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Winner metrics and the selection rule, when evaluation ran.",
+      "title": "Evaluation"
+    }
+  },
+  "required": [
+    "corpus_version",
+    "builder_version",
+    "config",
+    "tantivy_version",
+    "document_count",
+    "chunk_count",
+    "query_count",
+    "kind_counts",
+    "index_counts",
+    "files"
+  ],
+  "title": "RetrievalManifest",
+  "type": "object"
+}

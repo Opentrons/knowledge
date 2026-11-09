@@ -101,6 +101,9 @@ def _primary_key(item: dict[str, Any]) -> str:
         "constraint_id",
         "example_id",
         "source_file_id",
+        "chunk_id",
+        "retrieval_id",
+        "query_id",
         "id",
     ):
         if key in item:

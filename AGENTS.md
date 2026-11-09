@@ -21,15 +21,19 @@ The product is the **corpus artifact** (same bytes as a directory, shipped as
    - `ghcr.io/opentrons/opentrons-knowledge:<version>` via `opentrons-knowledge pull`
 2. Open the unpacked directory.
 3. Read `manifest.yaml`. Use `raw/` for verbatim pinned sources, or
-   `corpus/*.jsonl.zst` for normalized records (this package does not ship
-   indexes or embeddings).
+   `corpus/*.jsonl.zst` for normalized records. From `10.0.0-k3`, `retrieval/`
+   adds searchable documents, chunks, and two BM25 indexes: `retrieval/api/`
+   for the Python API reference and `retrieval/docs/` for everything else.
+   No embeddings are shipped.
 
 ```bash
 opentrons-knowledge unpack opentrons-knowledge-9.1.1-k1.tar.zst --output dist
 # or: opentrons-knowledge pull 9.1.1-k1 --output dist
 ```
 
-The on-disk layout is the API. Downstream apps define search/ranking.
+The on-disk layout is the API. Downstream apps define ranking; the shipped BM25
+index and its evaluation (`reports/retrieval-eval.json`) are a measured starting
+point, not a service.
 
 ## Authority order (highest first)
 

@@ -40,8 +40,12 @@ sha256:<digest of the packed corpus / OCI manifest>
 | Artifact identity | Directory checksums + `.tar.zst` digest + OCI digest |
 
 Canonical corpus records must remain usable without any particular LLM provider,
-vector database, agent framework, or runtime service. **Indexing, embeddings,
-and ranking are explicitly out of scope** for this repository.
+vector database, agent framework, or runtime service. **Embeddings and query-time
+ranking are out of scope** for this repository. A BM25 index is in scope from
+`10.0.0-k3` because an evaluation shows which index to build
+([retrieval-design.md](retrieval-design.md),
+[retrieval-experiments.md](retrieval-experiments.md)); it is derived from the
+corpus records and never replaces them.
 
 ## Package Layout
 
@@ -49,12 +53,13 @@ and ranking are explicitly out of scope** for this repository.
 src/opentrons_knowledge/
   builder/          # orchestration pipeline
   sources/          # clone/resolve/materialize pinned trees
-  docs/             # Markdown / MkDocs ingestion
+  docs/             # Markdown / MkDocs ingestion; pinned MkDocs render + HTML extraction
   python_api/       # AST symbol extraction
   shared_data/      # definition parsing + entity normalization
   models/           # Pydantic canonical models + manifests
   normalization/    # IDs, hashing, deterministic JSONL
   relationships/    # relationship + constraint extraction
+  retrieval/        # retrieval documents, chunkers, BM25 index, evaluation, bundle
   compatibility/    # compatibility validation
   artifacts/        # packaging, checksums, reports, tar.zst
   registry/         # ORAS publish/pull for OCI
@@ -77,6 +82,11 @@ src/opentrons_knowledge/
 11. Build relationships and constraints
 12. Detect duplicates and conflicts
 13. Write canonical corpus files (sorted, stable IDs)
+    - optional, when `rendered_docs` is set: render the pinned MkDocs site in an
+      isolated checkout and write `canonical/` from the HTML
+      ([canonical-docs.md](canonical-docs.md))
+    - optional, when `retrieval` is set: build `retrieval/` from `canonical/`
+      and the entity records, evaluate it, and write `reports/retrieval-eval.json`
 14. Write reports and checksums
 15. Pack as `opentrons-knowledge-<version>.tar.zst`
 16. Optionally publish OCI via ORAS to GHCR
@@ -96,10 +106,10 @@ Conflicts are never silently deleted.
 
 ## Consumer Boundary
 
-This package **builds, packs, and publishes** corpora. It does not provide
-search, indexes, embeddings, or `get_symbol`-style lookup APIs. Downstream
-systems unpack/pull the artifact and read `corpus/` with their own retrieval
-stack.
+This package **builds, packs, and publishes** corpora. It does not provide a
+search service, embeddings, or `get_symbol`-style lookup APIs. Downstream
+systems unpack/pull the artifact and either search `retrieval/api/` and
+`retrieval/docs/` or read `corpus/` and `canonical/` with their own stack.
 
 Agent-facing usage instructions ship in the repository and inside every corpus
 as `AGENTS.md`, `llms.txt`, and `docs/agent-usage.md`.
@@ -107,7 +117,8 @@ as `AGENTS.md`, `llms.txt`, and `docs/agent-usage.md`.
 ## Non-Goals (initial product)
 
 - Lookup / query SDK
-- Lexical or vector indexes in the artifact
+- Vector indexes in the artifact (BM25 ships from `10.0.0-k3`; dense retrieval
+  needs its own evaluation first)
 - Embeddings or re-ranking
 - Full agent framework
 - Production search SaaS

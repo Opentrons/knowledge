@@ -19,6 +19,10 @@ class CompatibilityError(KnowledgeError):
     """A required source is incompatible with the target release."""
 
 
+class DocsBuildError(KnowledgeError):
+    """The Opentrons MkDocs site could not be checked out or rendered."""
+
+
 class CorpusValidationError(KnowledgeError):
     """Built corpus failed validation or checksum verification."""
 

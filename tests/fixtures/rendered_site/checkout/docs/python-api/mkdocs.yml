@@ -1,0 +1,5 @@
+site_name: python-api
+
+nav:
+  - Loading Pipettes: pipettes/loading.md
+  - Instruments: reference/instruments.md

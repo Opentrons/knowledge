@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="Load single-channel, 8-channel, and 96-channel pipettes in protocols." name="description"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.0" name="generator"/>
+<title>Python API: Loading Pipettes - Opentrons Documentation</title>
+<link href="../../../assets/stylesheets/main.css" rel="stylesheet"/>
+</head>
+<body dir="ltr">
+<header class="md-header" data-md-component="header">
+  <nav aria-label="Header" class="md-header__inner md-grid">
+    <a class="md-header__button md-logo" href="../../../">Opentrons Documentation</a>
+    <div class="md-search" data-md-component="search"><form class="md-search__form"><input class="md-search__input" placeholder="Search"/></form></div>
+  </nav>
+</header>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+  <nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
+    <ul class="md-nav__list">
+      <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+        <label class="md-nav__link" for="__nav_1"><span class="md-ellipsis">Python API</span></label>
+        <nav class="md-nav" data-md-level="1">
+          <ul class="md-nav__list">
+            <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+              <label class="md-nav__link" for="__nav_1_1"><span class="md-ellipsis">Pipettes</span></label>
+              <nav class="md-nav" data-md-level="2">
+                <ul class="md-nav__list">
+                  <li class="md-nav__item md-nav__item--active">
+                    <a class="md-nav__link md-nav__link--active" href="./"><span class="md-ellipsis">
+                      Loading Pipettes
+                    </span></a>
+                  </li>
+                  <li class="md-nav__item"><a class="md-nav__link" href="../characteristics/"><span class="md-ellipsis">Pipette Characteristics</span></a></li>
+                </ul>
+              </nav>
+            </li>
+          </ul>
+        </nav>
+      </li>
+    </ul>
+  </nav>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+  <nav aria-label="Table of Contents" class="md-nav md-nav--secondary">
+    <label class="md-nav__title" for="__toc">Table of Contents</label>
+    <ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#api-load-names">TOC ENTRY SHOULD NOT APPEAR</a></li></ul>
+  </nav>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<a class="md-content__button md-icon" href="https://github.com/Opentrons/opentrons/edit/edge/docs/python-api/docs/pipettes/loading.md" title="Edit this page">EDIT BUTTON</a>
+<h1>Loading Pipettes</h1>
+<p>When writing a protocol, you must inform the Protocol API about the pipettes you will be using. See <a class="autorefs autorefs-internal" href="../../reference/instruments/#opentrons.protocol_api.InstrumentContext"><code>InstrumentContext</code></a> and the <a href="https://opentrons.com/pipettes">pipette catalog</a>.</p>
+<h2 id="api-load-names">API load names<a class="headerlink" href="#api-load-names" title="Permanent link">¶</a></h2>
+<p>Choose the tab for your <em>robot</em>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"/><input id="__tabbed_1_2" name="__tabbed_1" type="radio"/><div class="tabbed-labels"><label for="__tabbed_1_1">Flex</label><label for="__tabbed_1_2">OT-2</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="c1"># Flex 1-Channel in the left mount</span>
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="n">pipette</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">load_instrument</span><span class="p">(</span><span class="s2">"flex_1channel_1000"</span><span class="p">,</span> <span class="s2">"left"</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="c1"># OT-2 single-channel GEN2</span>
+</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="n">pipette</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">load_instrument</span><span class="p">(</span><span class="s2">"p300_single_gen2"</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">)</span>
+</span></code></pre></div>
+<h4 id="ot-2-notes">OT-2 notes</h4>
+<p>GEN1 pipettes are also supported.</p>
+</div>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do not load two pipettes on the same mount.</p>
+<div class="language-python highlight"><pre><span></span><code>protocol.load_instrument("p20_single_gen2", "left")  # second load fails
+</code></pre></div>
+</div>
+<h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">¶</a></h3>
+<ol start="3">
+<li>
+<p>Attach the pipette.</p>
+<ul>
+<li>Check the mount.</li>
+<li>Run <strong>calibration</strong>.</li>
+</ul>
+</li>
+<li>Load it in your protocol.<br/>Then simulate.</li>
+</ol>
+<h2 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">¶</a></h2>
+<table>
+<thead>
+<tr><th>Pipette</th><th>Flex</th><th>OT-2</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="2">GEN2</td><td><span class="twemoji opentrons-blue"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m9 20.42-6.21-6.21 2.83-2.83L9 14.77l9.88-9.89 2.83 2.83z"></path></svg></span></td><td><code>p300_single_gen2</code></td></tr>
+<tr><td colspan="2"><ul><li>Single</li><li>Multi</li></ul></td></tr>
+</tbody>
+</table>
+<figure class="screenshot">
+<p><img alt="Flex pipette mounted on the left" src="../../images/pipette.png" title="Pipette"/></p>
+<figcaption>A Flex pipette in the <em>left</em> mount.</figcaption>
+</figure>
+<h3 id="water">Water<a class="headerlink" href="#water" title="Permanent link">¶</a></h3>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody><tr><td>Aspirate flow rate</td><td>478 µL/s</td></tr></tbody>
+</table>
+<details class="tip">
+<summary>Need more help?</summary>
+<p>Contact support.</p>
+</details>
+<iframe src="https://www.youtube.com/embed/xyz" title="Video"></iframe>
+<em>Loose inline text</em> after the video.
+<style>.no-min-width td { min-width: none; }</style>
+<script>console.log("SCRIPT SHOULD NOT APPEAR")</script>
+</article>
+</div>
+</div>
+</main>
+<footer class="md-footer">
+  <nav aria-label="Footer" class="md-footer__inner md-grid">
+    <a class="md-footer__link md-footer__link--next" href="../characteristics/">FOOTER NEXT LINK</a>
+  </nav>
+  <div class="md-copyright">© Opentrons 2026.</div>
+</footer>
+</div>
+</body>
+</html>

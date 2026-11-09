@@ -1,0 +1,1255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/canonical-document.schema.json",
+  "$defs": {
+    "AdmonitionBlock": {
+      "additionalProperties": false,
+      "description": "Note, warning, tip, and other callouts (including collapsible details).",
+      "properties": {
+        "type": {
+          "const": "admonition",
+          "default": "admonition",
+          "title": "Type",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "collapsible": {
+          "default": false,
+          "title": "Collapsible",
+          "type": "boolean"
+        },
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "AdmonitionBlock",
+      "type": "object"
+    },
+    "ApiObject": {
+      "additionalProperties": false,
+      "description": "mkdocstrings metadata for a section generated from Python source.",
+      "properties": {
+        "qualified_name": {
+          "title": "Qualified Name",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Labels",
+          "type": "array"
+        }
+      },
+      "required": [
+        "qualified_name",
+        "kind"
+      ],
+      "title": "ApiObject",
+      "type": "object"
+    },
+    "CanonicalSection": {
+      "additionalProperties": false,
+      "description": "A heading-delimited region of a page, in document order.",
+      "properties": {
+        "section_id": {
+          "title": "Section Id",
+          "type": "string"
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "level": {
+          "title": "Level",
+          "type": "integer"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anchor"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "heading_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Heading Path",
+          "type": "array"
+        },
+        "parent_section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Section Id"
+        },
+        "child_section_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Child Section Ids",
+          "type": "array"
+        },
+        "previous_section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Section Id"
+        },
+        "next_section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Section Id"
+        },
+        "api": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApiObject"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "section_id",
+        "document_id",
+        "ordinal",
+        "level",
+        "title",
+        "url",
+        "heading_path",
+        "content_hash"
+      ],
+      "title": "CanonicalSection",
+      "type": "object"
+    },
+    "CodeBlock": {
+      "additionalProperties": false,
+      "description": "A complete code block, verbatim, without syntax-highlighting markup.",
+      "properties": {
+        "type": {
+          "const": "code",
+          "default": "code",
+          "title": "Type",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "const": "signature",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "'signature' for API signatures generated by mkdocstrings.",
+          "title": "Role"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "CodeBlock",
+      "type": "object"
+    },
+    "FigureBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "figure",
+          "default": "figure",
+          "title": "Type",
+          "type": "string"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption"
+        },
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "title": "FigureBlock",
+      "type": "object"
+    },
+    "HeadingBlock": {
+      "additionalProperties": false,
+      "description": "A heading nested inside a container (tab, admonition, list).\n\nHeadings at the top level of the article start new sections instead.",
+      "properties": {
+        "type": {
+          "const": "heading",
+          "default": "heading",
+          "title": "Type",
+          "type": "string"
+        },
+        "level": {
+          "title": "Level",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anchor"
+        }
+      },
+      "required": [
+        "level",
+        "text"
+      ],
+      "title": "HeadingBlock",
+      "type": "object"
+    },
+    "HtmlBlock": {
+      "additionalProperties": false,
+      "description": "Fallback for markup that has no faithful structured representation.",
+      "properties": {
+        "type": {
+          "const": "html",
+          "default": "html",
+          "title": "Type",
+          "type": "string"
+        },
+        "html": {
+          "title": "Html",
+          "type": "string"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "html",
+        "reason"
+      ],
+      "title": "HtmlBlock",
+      "type": "object"
+    },
+    "ImageBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "image",
+          "default": "image",
+          "title": "Type",
+          "type": "string"
+        },
+        "src": {
+          "title": "Src",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "alt": {
+          "default": "",
+          "title": "Alt",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "src",
+        "url"
+      ],
+      "title": "ImageBlock",
+      "type": "object"
+    },
+    "ImageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {
+          "title": "Section Id",
+          "type": "string"
+        },
+        "src": {
+          "title": "Src",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "alt": {
+          "default": "",
+          "title": "Alt",
+          "type": "string"
+        },
+        "site_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Path"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Path"
+        }
+      },
+      "required": [
+        "section_id",
+        "src",
+        "url"
+      ],
+      "title": "ImageRef",
+      "type": "object"
+    },
+    "LinkRef": {
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {
+          "title": "Section Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "href": {
+          "title": "Href",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "internal": {
+          "title": "Internal",
+          "type": "boolean"
+        },
+        "target_page_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Page Path"
+        },
+        "target_anchor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Anchor"
+        }
+      },
+      "required": [
+        "section_id",
+        "text",
+        "href",
+        "url",
+        "internal"
+      ],
+      "title": "LinkRef",
+      "type": "object"
+    },
+    "ListBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "list",
+          "default": "list",
+          "title": "Type",
+          "type": "string"
+        },
+        "ordered": {
+          "title": "Ordered",
+          "type": "boolean"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ListItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ordered"
+      ],
+      "title": "ListBlock",
+      "type": "object"
+    },
+    "ListItem": {
+      "additionalProperties": false,
+      "properties": {
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "title": "ListItem",
+      "type": "object"
+    },
+    "ParagraphBlock": {
+      "additionalProperties": false,
+      "description": "Running text rendered as Markdown-style inline text.\n\nInline conventions: backticks for code, ``**bold**``, ``*emphasis*``,\n``[label](href)`` for links, ``![alt](src)`` for inline images, and the\noriginal ``:icon-name:`` shortcode for inline icons when it can be recovered.",
+      "properties": {
+        "type": {
+          "const": "paragraph",
+          "default": "paragraph",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ParagraphBlock",
+      "type": "object"
+    },
+    "QuoteBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "quote",
+          "default": "quote",
+          "title": "Type",
+          "type": "string"
+        },
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "title": "QuoteBlock",
+      "type": "object"
+    },
+    "RenderedRef": {
+      "additionalProperties": false,
+      "properties": {
+        "html_path": {
+          "title": "Html Path",
+          "type": "string"
+        },
+        "html_sha256": {
+          "title": "Html Sha256",
+          "type": "string"
+        },
+        "generator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generator"
+        }
+      },
+      "required": [
+        "html_path",
+        "html_sha256"
+      ],
+      "title": "RenderedRef",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "description": "Where the page came from in the documentation repository.",
+      "properties": {
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "commit": {
+          "title": "Commit",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "markdown_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markdown Path"
+        },
+        "markdown_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markdown Url"
+        },
+        "markdown_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markdown Sha256"
+        },
+        "front_matter": {
+          "additionalProperties": true,
+          "title": "Front Matter",
+          "type": "object"
+        }
+      },
+      "required": [
+        "repository",
+        "commit"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "Tab": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "blocks": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "admonition": "#/$defs/AdmonitionBlock",
+                "code": "#/$defs/CodeBlock",
+                "figure": "#/$defs/FigureBlock",
+                "heading": "#/$defs/HeadingBlock",
+                "html": "#/$defs/HtmlBlock",
+                "image": "#/$defs/ImageBlock",
+                "list": "#/$defs/ListBlock",
+                "paragraph": "#/$defs/ParagraphBlock",
+                "quote": "#/$defs/QuoteBlock",
+                "table": "#/$defs/TableBlock",
+                "tabs": "#/$defs/TabsBlock"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ParagraphBlock"
+              },
+              {
+                "$ref": "#/$defs/HeadingBlock"
+              },
+              {
+                "$ref": "#/$defs/CodeBlock"
+              },
+              {
+                "$ref": "#/$defs/ListBlock"
+              },
+              {
+                "$ref": "#/$defs/TableBlock"
+              },
+              {
+                "$ref": "#/$defs/AdmonitionBlock"
+              },
+              {
+                "$ref": "#/$defs/TabsBlock"
+              },
+              {
+                "$ref": "#/$defs/ImageBlock"
+              },
+              {
+                "$ref": "#/$defs/FigureBlock"
+              },
+              {
+                "$ref": "#/$defs/QuoteBlock"
+              },
+              {
+                "$ref": "#/$defs/HtmlBlock"
+              }
+            ]
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "Tab",
+      "type": "object"
+    },
+    "TableBlock": {
+      "additionalProperties": false,
+      "description": "A table with spans preserved as authored (cells are not expanded).",
+      "properties": {
+        "type": {
+          "const": "table",
+          "default": "table",
+          "title": "Type",
+          "type": "string"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/TableRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "title": "TableBlock",
+      "type": "object"
+    },
+    "TableCell": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "header": {
+          "default": false,
+          "title": "Header",
+          "type": "boolean"
+        },
+        "rowspan": {
+          "default": 1,
+          "title": "Rowspan",
+          "type": "integer"
+        },
+        "colspan": {
+          "default": 1,
+          "title": "Colspan",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TableCell",
+      "type": "object"
+    },
+    "TableRow": {
+      "additionalProperties": false,
+      "properties": {
+        "header": {
+          "default": false,
+          "title": "Header",
+          "type": "boolean"
+        },
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/TableCell"
+          },
+          "title": "Cells",
+          "type": "array"
+        }
+      },
+      "title": "TableRow",
+      "type": "object"
+    },
+    "TabsBlock": {
+      "additionalProperties": false,
+      "description": "A content tab set; each tab keeps its label and its own blocks.",
+      "properties": {
+        "type": {
+          "const": "tabs",
+          "default": "tabs",
+          "title": "Type",
+          "type": "string"
+        },
+        "tabs": {
+          "items": {
+            "$ref": "#/$defs/Tab"
+          },
+          "title": "Tabs",
+          "type": "array"
+        }
+      },
+      "title": "TabsBlock",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One rendered documentation page.",
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "page_path": {
+      "title": "Page Path",
+      "type": "string"
+    },
+    "url": {
+      "title": "Url",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "page_title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page Title"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "project": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project"
+    },
+    "nav_path": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Nav Path",
+      "type": "array"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceRef"
+    },
+    "rendered": {
+      "$ref": "#/$defs/RenderedRef"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/CanonicalSection"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "links": {
+      "items": {
+        "$ref": "#/$defs/LinkRef"
+      },
+      "title": "Links",
+      "type": "array"
+    },
+    "images": {
+      "items": {
+        "$ref": "#/$defs/ImageRef"
+      },
+      "title": "Images",
+      "type": "array"
+    },
+    "search_exclude": {
+      "default": false,
+      "description": "Page front matter sets search.exclude, matching the MkDocs search index.",
+      "title": "Search Exclude",
+      "type": "boolean"
+    },
+    "content_hash": {
+      "title": "Content Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "document_id",
+    "page_path",
+    "url",
+    "title",
+    "source",
+    "rendered",
+    "sections",
+    "content_hash"
+  ],
+  "title": "CanonicalDocument",
+  "type": "object"
+}

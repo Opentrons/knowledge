@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/retrieval-document.schema.json",
+  "$defs": {
+    "RetrievalKind": {
+      "enum": [
+        "doc_section",
+        "api_symbol",
+        "entity",
+        "guide_section"
+      ],
+      "title": "RetrievalKind",
+      "type": "string"
+    },
+    "Segment": {
+      "additionalProperties": false,
+      "description": "A block-boundary piece of a retrieval document; ``label`` is set for a tab.",
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Segment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A record a search returns: displayable text plus citation and filter fields.",
+  "properties": {
+    "retrieval_id": {
+      "title": "Retrieval Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/RetrievalKind"
+    },
+    "group_id": {
+      "description": "Records from one page or definition share a group (used by window chunking).",
+      "title": "Group Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "heading_path": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Heading Path",
+      "type": "array"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/Segment"
+      },
+      "title": "Segments",
+      "type": "array"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    },
+    "source_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Url"
+    },
+    "source_path": {
+      "title": "Source Path",
+      "type": "string"
+    },
+    "source_record_ids": {
+      "description": "Corpus record ids this document was built from (canonical section, symbol, entity, or guide section ids).",
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Record Ids",
+      "type": "array"
+    },
+    "authority_level": {
+      "title": "Authority Level",
+      "type": "string"
+    },
+    "doc_type": {
+      "description": "Page kind: api_reference, user_manual, labware_spec, module_guide, and so on.",
+      "title": "Doc Type",
+      "type": "string"
+    },
+    "project": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project"
+    },
+    "page_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page Path"
+    },
+    "anchor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Anchor"
+    },
+    "robot_types": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Robot Types",
+      "type": "array"
+    },
+    "api_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Api Name"
+    },
+    "api_version_min": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Api Version Min"
+    },
+    "load_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Load Name"
+    },
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+    },
+    "content_hash": {
+      "title": "Content Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "retrieval_id",
+    "kind",
+    "group_id",
+    "title",
+    "heading_path",
+    "text",
+    "segments",
+    "source_path",
+    "source_record_ids",
+    "authority_level",
+    "doc_type",
+    "content_hash"
+  ],
+  "title": "RetrievalDocument",
+  "type": "object"
+}

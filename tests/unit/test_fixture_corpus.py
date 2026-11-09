@@ -9,6 +9,7 @@ from opentrons_knowledge.artifacts.package import validate_corpus_dir
 from opentrons_knowledge.builder.pipeline import build_fixture_corpus
 from opentrons_knowledge.consumer.corpus import Corpus, diff_corpora
 from opentrons_knowledge.normalization.serialize import file_sha256, read_jsonl_zst
+from opentrons_knowledge.retrieval.bundle import validate_bundle
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mini_sources"
 
@@ -27,6 +28,10 @@ def test_fixture_corpus_build_and_validate(tmp_path: Path) -> None:
     assert (result.corpus_root / "raw" / "manifest.yaml").exists()
     assert (result.corpus_root / "raw" / "protocol_api").is_dir()
     assert manifest.record_counts.get("raw_files", 0) >= 1
+    assert (
+        manifest.record_counts["retrieval_chunks"] >= manifest.record_counts["retrieval_documents"]
+    )
+    assert validate_bundle(result.corpus_root / "retrieval") == []
     assert "tar.zst" in (result.corpus_root / "AGENTS.md").read_text(encoding="utf-8")
 
     corpus = Corpus.open(result.corpus_root)
@@ -63,6 +68,8 @@ def test_fixture_corpus_deterministic(tmp_path: Path) -> None:
         "source-files.jsonl.zst",
     ]:
         assert file_sha256(first / "corpus" / name) == file_sha256(second / "corpus" / name)
+    for name in ["documents.jsonl.zst", "chunks.jsonl.zst", "queries.jsonl.zst"]:
+        assert file_sha256(first / "retrieval" / name) == file_sha256(second / "retrieval" / name)
 
 
 def test_diff_identical_corpora(tmp_path: Path) -> None:

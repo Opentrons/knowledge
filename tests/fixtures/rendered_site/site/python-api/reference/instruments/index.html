@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.0" name="generator"/>
+<title>Python API: Instruments - Opentrons Documentation</title>
+</head>
+<body>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1>Instruments</h1>
+<div class="doc doc-object doc-class">
+<h2 class="doc doc-heading" id="opentrons.protocol_api.InstrumentContext">
+<span class="doc doc-object-name doc-class-name">InstrumentContext</span>
+<a class="headerlink" href="#opentrons.protocol_api.InstrumentContext" title="Permanent link">¶</a></h2>
+<div class="doc doc-contents first">
+<p>A context for a specific pipette or instrument.</p>
+<div class="doc doc-children">
+<div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="opentrons.protocol_api.InstrumentContext.aspirate">
+<span class="doc doc-object-name doc-function-name">aspirate</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-v2.0"><code>v2.0</code></small>
+</span>
+<a class="headerlink" href="#opentrons.protocol_api.InstrumentContext.aspirate" title="Permanent link">¶</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">aspirate</span><span class="p">(</span>
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentContext</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Draw liquid into the pipette tip.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<ul>
+<li class="doc-section-item field-body">
+<b><code>volume</code></b>
+              (<code><span title="float">float</span></code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+<p>The volume to aspirate, measured in µL.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h3 class="doc doc-heading" id="opentrons.protocol_api.InstrumentContext.channels">
+<span class="doc doc-object-name doc-attribute-name">channels</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+<small class="doc doc-label doc-label-v2.0"><code>v2.0</code></small>
+</span>
+<a class="headerlink" href="#opentrons.protocol_api.InstrumentContext.channels" title="Permanent link">¶</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code>channels: int
+</code></pre></div>
+<div class="doc doc-contents">
+<p>The number of channels on the pipette.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+</div>
+</body>
+</html>

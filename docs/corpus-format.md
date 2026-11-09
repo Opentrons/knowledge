@@ -23,6 +23,16 @@ dist/opentrons-knowledge-<version>/
     examples.jsonl.zst
     constraints.jsonl.zst
     source-files.jsonl.zst
+  canonical/               # optional: only when the source manifest sets rendered_docs
+    documents.jsonl.zst    # rendered-HTML canonical documents (see canonical-docs.md)
+    manifest.json
+  retrieval/               # optional: only when the source manifest sets retrieval
+    manifest.json          # config, counts, sha256 per file, evaluation summary
+    documents.jsonl.zst    # RetrievalDocument: what a search returns
+    chunks.jsonl.zst       # Chunk: what the index matches
+    queries.jsonl.zst      # evaluation queries with resolved retrieval ids
+    api/bm25/              # API reference: exact symbol, then section text
+    docs/bm25/             # passages: how-tos, manuals, labware, pipettes, modules
   schemas/
     *.schema.json
   reports/
@@ -30,18 +40,29 @@ dist/opentrons-knowledge-<version>/
     source-report.json
     compatibility-report.json
     duplication-report.json
+    retrieval-eval.json    # when retrieval.run_experiments is set
 ```
 
 Logical separation is stable even if compression formats evolve:
 
 - verbatim pinned sources under `raw/` (monorepo layout per manifest source key)
 - canonical normalized data under `corpus/`
+- optional rendered-docs canonical corpus under `canonical/`, with its own
+  `schema_id`/`schema_version` (see [canonical-docs.md](canonical-docs.md))
 - schemas under `schemas/`
 - reports under `reports/`
 - provenance in `manifest.yaml` + `checksums.txt`
 
-There is **no** `indexes/` tree in published artifacts. Search and embeddings are
-consumer concerns.
+- optional retrieval bundle under `retrieval/`, with its own `schema_id`/
+  `schema_version` (see [retrieval-design.md](retrieval-design.md))
+
+There is no embeddings file. From `10.0.0-k3` the bundle ships two BM25 indexes,
+`retrieval/api/bm25/` and `retrieval/docs/bm25/`, chosen for the two kinds of
+question an agent asks (see [retrieval-design.md](retrieval-design.md) and
+[retrieval-experiments.md](retrieval-experiments.md)). Tantivy names its segment
+files randomly, so those directories are checked by opening them, not by byte
+digest; every other retrieval file is byte-reproducible. Tantivy's
+`.tantivy-*.lock` runtime files are excluded from `checksums.txt`.
 
 ## Published archives
 

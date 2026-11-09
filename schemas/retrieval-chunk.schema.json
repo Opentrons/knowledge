@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/retrieval-chunk.schema.json",
+  "additionalProperties": false,
+  "description": "An indexed unit. ``text`` is returned; ``index_terms`` is searchable but not shown.",
+  "properties": {
+    "chunk_id": {
+      "title": "Chunk Id",
+      "type": "string"
+    },
+    "retrieval_id": {
+      "title": "Retrieval Id",
+      "type": "string"
+    },
+    "covers": {
+      "description": "Every retrieval document this chunk contains text from.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Covers",
+      "type": "array"
+    },
+    "ordinal": {
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Label"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "index_terms": {
+      "default": "",
+      "title": "Index Terms",
+      "type": "string"
+    },
+    "content_hash": {
+      "title": "Content Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "chunk_id",
+    "retrieval_id",
+    "covers",
+    "ordinal",
+    "text",
+    "content_hash"
+  ],
+  "title": "Chunk",
+  "type": "object"
+}

@@ -74,6 +74,16 @@ corpus/
   examples.jsonl.zst
   constraints.jsonl.zst
   source-files.jsonl.zst
+canonical/            # optional; rendered MkDocs HTML as structured documents
+  documents.jsonl.zst
+  manifest.json
+retrieval/            # optional (10.0.0-k3+); documents, chunks, two BM25 indexes
+  documents.jsonl.zst
+  chunks.jsonl.zst
+  queries.jsonl.zst
+  manifest.json
+  api/bm25/           # Python API reference (exact symbol, then section text)
+  docs/bm25/          # how-tos, manuals, labware, pipettes, modules
 schemas/
 reports/
 ```
@@ -88,11 +98,21 @@ Records are deterministic JSONL (zstd), sorted by primary id.
 | API method / class behavior | `corpus/code-symbols.jsonl.zst` |
 | Labware / pipette / module identity | `corpus/entities.jsonl.zst` (+ `raw_source`) |
 | How-to / narrative | `corpus/sections.jsonl.zst` / `documents.jsonl.zst` |
+| Docs exactly as rendered (tabs, admonitions, macro tables, API reference) | `canonical/documents.jsonl.zst` when present |
 | Restrictions / version gates | `corpus/constraints.jsonl.zst` |
 | Provenance / pins | `manifest.yaml`, `sources` in reports |
+| Python API symbol, signature, parameters | `retrieval/api/bm25/` (exact name, then section text) |
+| Procedure, hardware, labware, module | `retrieval/docs/bm25/` (BM25). Resolve hits through `retrieval/documents.jsonl.zst` |
 
-Build your own search (lexical, vector, hybrid) on these files. This repo does
-not ship a query API or pre-built indexes.
+When `retrieval/` is present, search it as two tools. The API index holds every
+documented symbol (325 on `10.0.0-k3`); a query of `Class.method` returns that
+reference section. The docs index holds the other sections plus labware,
+pipette, and module records, cut the way the evaluation in
+`reports/retrieval-eval.json` selected. Map a hit's `chunk_id` to
+`retrieval/chunks.jsonl.zst`, then cite that chunk's document (`url`,
+`source_url`). Every `retrieval_id` is unique and derived from a source path.
+No embeddings ship. Query shapes are in [retrieval-tool.md](retrieval-tool.md).
+This repo does not ship a query service.
 
 ## Authority precedence (required)
 

@@ -1,0 +1,666 @@
+# Curated retrieval evaluation set for the Opentrons Knowledge corpus.
+#
+# Status: DRAFT, awaiting docs-owner review. Questions are phrased the way users
+# and OpentronsAI ask them, deliberately avoiding the exact heading text.
+#
+# Label forms (see src/opentrons_knowledge/retrieval/evaluation.py):
+#   doc:<page_path>             any section of the page
+#   doc:<page_path>#<anchor>    that section or one nested under it
+#   api:<public name>           API reference section or symbol record
+#   labware:<load_name> | pipette:<key> | module:<model>
+#   guide:<file>[#<anchor>]     AI guide file or section
+#
+# A query hits when any label's documents appear in the top k results.
+# Labels that stop resolving fail the evaluation, so stale labels are caught.
+review:
+  status: draft
+  drafted: 2026-11-09
+  reviewer: null
+queries:
+  # --- Protocol API: how do I ... -------------------------------------------
+  - query_id: c-api-001
+    category: protocol_api
+    query: How do I load a pipette on the left mount of a Flex?
+    relevant:
+      - doc:python-api/pipettes/loading/#loading-flex-1-and-8-channel-pipettes
+      - api:opentrons.protocol_api.ProtocolContext.load_instrument
+  - query_id: c-api-002
+    category: protocol_api
+    query: what load name do I use for the Flex 96 channel pipette
+    relevant:
+      - doc:python-api/pipettes/loading/#loading-a-flex-96-channel-pipette
+      - doc:python-api/pipettes/loading/#api-load-names
+  - query_id: c-api-003
+    category: protocol_api
+    query: pick up only one column of tips with the 96-channel pipette
+    relevant:
+      - doc:python-api/pipettes/partial-tip-pickup/#column-layout
+      - api:opentrons.protocol_api.InstrumentContext.configure_nozzle_layout
+  - query_id: c-api-004
+    category: protocol_api
+    query: use a single nozzle on an 8-channel pipette to pick up one tip
+    relevant:
+      - doc:python-api/pipettes/partial-tip-pickup/#single-layout
+      - doc:python-api/pipettes/partial-tip-pickup/#partial-column-layout
+  - query_id: c-api-005
+    category: protocol_api
+    query: transfer liquid from one plate to another with a new tip for each well
+    relevant:
+      - doc:python-api/complex-commands/parameters/#tip-handling
+      - doc:python-api/complex-commands/sources-destinations/
+      - api:opentrons.protocol_api.InstrumentContext.transfer
+  - query_id: c-api-006
+    category: protocol_api
+    query: distribute one reagent into many wells with a disposal volume
+    relevant:
+      - doc:python-api/complex-commands/parameters/#disposal-volume
+      - api:opentrons.protocol_api.InstrumentContext.distribute
+  - query_id: c-api-007
+    category: protocol_api
+    query: combine liquid from several wells into a single tube
+    relevant:
+      - doc:python-api/complex-commands/sources-destinations/
+      - api:opentrons.protocol_api.InstrumentContext.consolidate
+  - query_id: c-api-008
+    category: protocol_api
+    query: change how fast the pipette aspirates in microliters per second
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#aspiration-flow-rates
+      - doc:python-api/pipettes/characteristics/#pipette-flow-rates
+      - api:opentrons.protocol_api.InstrumentContext.flow_rate
+  - query_id: c-api-009
+    category: protocol_api
+    query: aspirate from 2 mm above the bottom of the well
+    relevant:
+      - doc:python-api/robot-position/#bottom
+      - api:opentrons.protocol_api.Well.bottom
+      - api:opentrons.protocol_api.InstrumentContext.well_bottom_clearance
+  - query_id: c-api-010
+    category: protocol_api
+    query: pipette relative to the liquid surface instead of the well bottom
+    relevant:
+      - doc:python-api/robot-position/#meniscus
+      - api:opentrons.protocol_api.Well.meniscus
+  - query_id: c-api-011
+    category: protocol_api
+    query: mix the sample 5 times after dispensing
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#mix
+      - doc:python-api/complex-commands/parameters/#mix-after
+      - api:opentrons.protocol_api.InstrumentContext.mix
+  - query_id: c-api-012
+    category: protocol_api
+    query: add an air gap so liquid does not drip from the tip
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#air-gap-building-block
+      - doc:python-api/complex-commands/parameters/#air-gap-complex
+      - api:opentrons.protocol_api.InstrumentContext.air_gap
+  - query_id: c-api-013
+    category: protocol_api
+    query: knock off droplets by touching the tip to the side of the well
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#touch-tip-building-block
+      - api:opentrons.protocol_api.InstrumentContext.touch_tip
+  - query_id: c-api-014
+    category: protocol_api
+    query: blow out remaining liquid into the trash after dispensing
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#blow-out-building-block
+      - doc:python-api/complex-commands/parameters/#blow-out-complex
+      - api:opentrons.protocol_api.InstrumentContext.blow_out
+  - query_id: c-api-015
+    category: protocol_api
+    query: put the tip back in the rack instead of throwing it away
+    relevant:
+      - doc:python-api/building-block-commands/pipette-tips/#returning-a-tip
+      - api:opentrons.protocol_api.InstrumentContext.return_tip
+  - query_id: c-api-016
+    category: protocol_api
+    query: start picking up tips from a specific well in a partially used tip rack
+    relevant:
+      - doc:python-api/building-block-commands/pipette-tips/#working-with-used-tips
+      - doc:python-api/building-block-commands/pipette-tips/#automating-tip-pickup
+      - api:opentrons.protocol_api.InstrumentContext.starting_tip
+  - query_id: c-api-017
+    category: protocol_api
+    query: move a plate from the deck onto the heater-shaker with the gripper
+    relevant:
+      - doc:python-api/moving-labware/
+      - api:opentrons.protocol_api.ProtocolContext.move_labware
+  - query_id: c-api-018
+    category: protocol_api
+    query: throw a used plate into the waste chute
+    relevant:
+      - doc:python-api/moving-labware/#movement-into-the-waste-chute
+      - doc:python-api/deck-slots/#waste-chute-api
+  - query_id: c-api-019
+    category: protocol_api
+    query: where does the trash go on a Flex protocol, do I need to load it
+    relevant:
+      - doc:python-api/deck-slots/#trash-bin-api
+      - doc:python-api/adapting-ot2-flex/#trash-container
+      - api:opentrons.protocol_api.ProtocolContext.load_trash_bin
+  - query_id: c-api-020
+    category: protocol_api
+    query: name and color the liquids in each well so they show in the app
+    relevant:
+      - doc:python-api/labware/#labeling-liquids-in-labware
+      - api:opentrons.protocol_api.ProtocolContext.define_liquid
+      - api:opentrons.protocol_api.Well.load_liquid
+  - query_id: c-api-021
+    category: protocol_api
+    query: let the user choose the number of samples when they set up the run
+    relevant:
+      - doc:python-api/runtime-parameters/use-case-sample-count/
+      - doc:python-api/runtime-parameters/defining/#integer-parameters
+  - query_id: c-api-022
+    category: protocol_api
+    query: read a CSV file of wells and volumes in my protocol
+    relevant:
+      - doc:python-api/runtime-parameters/defining/#csv-parameters
+      - doc:python-api/runtime-parameters/using-values/#manipulating-csv-data
+      - doc:python-api/runtime-parameters/use-case-cherrypicking/
+  - query_id: c-api-023
+    category: protocol_api
+    query: add a dry run option that skips the incubation waits
+    relevant:
+      - doc:python-api/runtime-parameters/use-case-dry-run/
+  - query_id: c-api-024
+    category: protocol_api
+    query: wait for 10 minutes in the middle of a protocol
+    relevant:
+      - doc:python-api/building-block-commands/utilities/#delay-and-resume
+      - api:opentrons.protocol_api.ProtocolContext.delay
+  - query_id: c-api-025
+    category: protocol_api
+    query: stop the protocol until the operator presses resume
+    relevant:
+      - doc:python-api/building-block-commands/utilities/#pause-until-resumed
+      - api:opentrons.protocol_api.ProtocolContext.pause
+  - query_id: c-api-026
+    category: protocol_api
+    query: which apiLevel should I put in my protocol requirements
+    relevant:
+      - doc:python-api/versioning/#specifying-versions
+      - doc:python-api/versioning/#maximum-supported-versions
+      - doc:python-api/tutorial/#requirements
+  - query_id: c-api-027
+    category: protocol_api
+    query: convert my OT-2 protocol so it runs on Flex
+    relevant:
+      - doc:python-api/adapting-ot2-flex/
+      - doc:flex/protocols/ot-2/
+      - guide:OT2ToFlex.md
+  - query_id: c-api-028
+    category: protocol_api
+    query: check whether a well has liquid before aspirating
+    relevant:
+      - doc:python-api/building-block-commands/liquids/#detect-liquids
+      - doc:python-api/pipettes/loading/#liquid-presence-detection
+      - api:opentrons.protocol_api.InstrumentContext.detect_liquid_presence
+  - query_id: c-api-029
+    category: protocol_api
+    query: transfer viscous glycerol using a liquid class
+    relevant:
+      - doc:python-api/liquid-classes/definitions/#viscous
+      - doc:python-api/liquid-classes/using/
+      - api:opentrons.protocol_api.InstrumentContext.transfer_with_liquid_class
+  - query_id: c-api-030
+    category: protocol_api
+    query: create my own liquid class with custom aspirate settings
+    relevant:
+      - doc:python-api/liquid-classes/customizing/
+      - api:opentrons.protocol_api.ProtocolContext.define_liquid_class
+  - query_id: c-api-031
+    category: protocol_api
+    query: access wells by row or column in a 96 well plate
+    relevant:
+      - doc:python-api/labware/#accessing-groups-of-wells
+      - api:opentrons.protocol_api.Labware.columns
+      - api:opentrons.protocol_api.Labware.rows
+  - query_id: c-api-032
+    category: protocol_api
+    query: put a plate on top of an adapter on the deck
+    relevant:
+      - doc:python-api/labware/#loading-labware-on-adapters
+      - api:opentrons.protocol_api.ProtocolContext.load_adapter
+  - query_id: c-api-033
+    category: protocol_api
+    query: use a labware definition JSON file that I made myself
+    relevant:
+      - doc:python-api/labware/#custom-labware
+      - api:opentrons.protocol_api.ProtocolContext.load_labware_from_definition
+  - query_id: c-api-034
+    category: protocol_api
+    query: run two modules at the same time without waiting
+    relevant:
+      - doc:python-api/modules/concurrent/
+      - doc:flex/protocols/python-api/#concurrent-commands
+  - query_id: c-api-035
+    category: protocol_api
+    query: what deck slot names does Flex use compared to OT-2 numbers
+    relevant:
+      - doc:python-api/deck-slots/#api-deck-labels
+      - doc:python-api/adapting-ot2-flex/#deck-slot-labels
+      - guide:OT2ToFlex.md#deck-slot-labels
+  - query_id: c-api-036
+    category: protocol_api
+    query: turn on the robot lights from my protocol
+    relevant:
+      - doc:python-api/building-block-commands/utilities/#rail-lights
+      - api:opentrons.protocol_api.ProtocolContext.set_rail_lights
+  - query_id: c-api-037
+    category: protocol_api
+    query: write a message to the run log during the protocol
+    relevant:
+      - doc:python-api/building-block-commands/utilities/#comment
+      - api:opentrons.protocol_api.ProtocolContext.comment
+  - query_id: c-api-038
+    category: protocol_api
+    query: serial dilution down a row of a plate
+    relevant:
+      - doc:python-api/examples/#dilution
+      - doc:python-api/tutorial/
+      - guide:serial_dilution_examples.md
+  - query_id: c-api-039
+    category: protocol_api
+    query: simulate my protocol on my laptop before running it
+    relevant:
+      - doc:python-api/tutorial/#in-simulation
+      - doc:python-api/advanced-control/command-line/
+  - query_id: c-api-040
+    category: protocol_api
+    query: control the robot from a Jupyter notebook
+    relevant:
+      - doc:python-api/advanced-control/jupyter/
+      - doc:flex/advanced-operation/jupyter-notebook/
+  # --- Modules in protocols --------------------------------------------------
+  - query_id: c-mod-001
+    category: modules
+    query: run a PCR cycling profile on the thermocycler
+    relevant:
+      - doc:python-api/modules/thermocycler/#thermocycler-profiles-api
+      - api:opentrons.protocol_api.ThermocyclerContext.execute_profile
+  - query_id: c-mod-002
+    category: modules
+    query: heat the thermocycler lid to 105 degrees
+    relevant:
+      - doc:python-api/modules/thermocycler/#lid-control
+      - api:opentrons.protocol_api.ThermocyclerContext.set_lid_temperature
+  - query_id: c-mod-003
+    category: modules
+    query: shake the plate at 1000 rpm on the heater-shaker
+    relevant:
+      - doc:python-api/modules/heater-shaker/#shaking
+      - api:opentrons.protocol_api.HeaterShakerContext.set_and_wait_for_shake_speed
+  - query_id: c-mod-004
+    category: modules
+    query: open the heater shaker latch so the gripper can remove the plate
+    relevant:
+      - doc:python-api/modules/heater-shaker/#latch-control
+      - api:opentrons.protocol_api.HeaterShakerContext.open_labware_latch
+  - query_id: c-mod-005
+    category: modules
+    query: keep samples cold at 4 C with the temperature module
+    relevant:
+      - doc:python-api/modules/temperature-module/#temperature-control
+      - api:opentrons.protocol_api.TemperatureModuleContext.set_temperature
+  - query_id: c-mod-006
+    category: modules
+    query: measure absorbance of a plate at 450 nm
+    relevant:
+      - doc:python-api/modules/absorbance-plate-reader/#reading-a-plate
+      - doc:python-api/modules/absorbance-plate-reader/#initialization
+      - api:opentrons.protocol_api.AbsorbanceReaderContext.read
+  - query_id: c-mod-007
+    category: modules
+    query: magnetic bead separation on Flex
+    relevant:
+      - doc:python-api/modules/magnetic-block/
+      - doc:flex/modules/magnetic-block/
+  - query_id: c-mod-008
+    category: modules
+    query: raise the magnets on the OT-2 magnetic module
+    relevant:
+      - doc:python-api/modules/magnetic-module/#engaging-and-disengaging
+      - api:opentrons.protocol_api.MagneticModuleContext.engage
+  - query_id: c-mod-009
+    category: modules
+    query: get a tip rack out of the Flex Stacker during a run
+    relevant:
+      - doc:python-api/modules/flex-stacker/#using-stacker-labware
+      - api:opentrons.protocol_api.FlexStackerContext.retrieve
+  - query_id: c-mod-010
+    category: modules
+    query: which deck slots can the heater-shaker go in
+    relevant:
+      - doc:python-api/modules/heater-shaker/#deck-slots-heater-shaker-api
+      - doc:heater-shaker/pre-installation/#deck-placement-and-cable-alignment
+  - query_id: c-mod-011
+    category: modules
+    query: load the temperature module with an aluminum block for PCR tubes
+    relevant:
+      - doc:python-api/modules/temperature-module/#block-and-tube-combinations
+      - doc:python-api/modules/temperature-module/#loading-labware
+  - query_id: c-mod-012
+    category: modules
+    query: what module load names exist for load_module
+    relevant:
+      - doc:python-api/modules/setup/#available-modules
+      - api:opentrons.protocol_api.ProtocolContext.load_module
+  - query_id: c-mod-013
+    category: modules
+    query: use auto-sealing lids on the thermocycler
+    relevant:
+      - doc:python-api/modules/thermocycler/#auto-sealing-lids
+      - doc:flex/modules/thermocycler/#opentrons-tough-pcr-lids
+      - labware:opentrons_tough_pcr_auto_sealing_lid
+  # --- Labware ----------------------------------------------------------------
+  - query_id: c-lab-001
+    category: labware
+    query: load name for the NEST 96 well PCR plate 100 uL
+    relevant:
+      - labware:nest_96_wellplate_100ul_pcr_full_skirt
+  - query_id: c-lab-002
+    category: labware
+    query: Flex 1000 uL tip rack load name
+    relevant:
+      - labware:opentrons_flex_96_tiprack_1000ul
+  - query_id: c-lab-003
+    category: labware
+    query: 12 column reservoir from NEST
+    relevant:
+      - labware:nest_12_reservoir_15ml
+  - query_id: c-lab-004
+    category: labware
+    query: single well reservoir for the 96-channel pipette
+    relevant:
+      - labware:nest_1_reservoir_195ml
+      - guide:96-channel-pipette.md#reservoirs
+      - doc:flex/labware/types/#reservoirs
+  - query_id: c-lab-005
+    category: labware
+    query: 384 well plate Corning flat bottom
+    relevant:
+      - labware:corning_384_wellplate_112ul_flat
+  - query_id: c-lab-006
+    category: labware
+    query: tube rack for 1.5 mL Eppendorf tubes
+    relevant:
+      - labware:opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap
+      - doc:flex/labware/types/#tubes-and-tube-racks
+  - query_id: c-lab-007
+    category: labware
+    query: deep well plate 2 mL
+    relevant:
+      - labware:nest_96_wellplate_2ml_deep
+  - query_id: c-lab-008
+    category: labware
+    query: falcon 15 and 50 mL conical tube rack
+    relevant:
+      - labware:opentrons_10_tuberack_falcon_4x50ml_6x15ml_conical
+  - query_id: c-lab-009
+    category: labware
+    query: adapter to put a flat bottom plate on the heater-shaker
+    relevant:
+      - labware:opentrons_96_flat_bottom_adapter
+      - labware:opentrons_universal_flat_adapter
+      - doc:heater-shaker/adapters/
+  - query_id: c-lab-010
+    category: labware
+    query: what is the well volume of the Bio-Rad PCR plate
+    relevant:
+      - labware:biorad_96_wellplate_200ul_pcr
+  - query_id: c-lab-011
+    category: labware
+    query: OT-2 20 uL tips
+    relevant:
+      - labware:opentrons_96_tiprack_20ul
+      - doc:ot-2/labware/types/#tips-and-tip-racks-ot2
+  - query_id: c-lab-012
+    category: labware
+    query: make a custom labware definition for a plate that is not in the library
+    relevant:
+      - doc:flex/labware/definitions/#custom-labware-creator
+      - doc:ot-2/labware/definitions/#custom-labware-creator-ot2
+      - doc:python-api/labware/#custom-labware
+  - query_id: c-lab-013
+    category: labware
+    query: which tips work with which Flex pipettes
+    relevant:
+      - doc:python-api/pipettes/loading/#tip-pipette-compatibility
+      - doc:flex/labware/types/#tip-pipette-compatibility
+  - query_id: c-lab-014
+    category: labware
+    query: what labware can the gripper move
+    relevant:
+      - doc:python-api/moving-labware/#supported-labware
+      - doc:flex/labware/gripper/
+  - query_id: c-lab-015
+    category: labware
+    query: labware that works with the 96-channel pipette
+    relevant:
+      - guide:96-channel-pipette.md#complete-list-of-96-channel-compatible-labware
+      - doc:flex/labware/types/
+  # --- Hardware and robot ----------------------------------------------------
+  - query_id: c-hw-001
+    category: hardware
+    query: Flex 8-channel 1000 uL pipette volume range and accuracy
+    relevant:
+      - doc:flex/system-description/pipettes/#8-channel-pipette-specifications
+      - pipette:eight_channel/p1000/v3
+  - query_id: c-hw-002
+    category: hardware
+    query: how much does the Flex weigh and how big is it
+    relevant:
+      - doc:flex/system-description/specs/#general-specifications
+  - query_id: c-hw-003
+    category: hardware
+    query: power requirements for the Flex
+    relevant:
+      - doc:flex/installation/requirements/#power-consumption-flex
+      - doc:flex/system-description/specs/
+  - query_id: c-hw-004
+    category: hardware
+    query: what happens when I press the emergency stop
+    relevant:
+      - doc:flex/system-description/e-stop/
+  - query_id: c-hw-005
+    category: hardware
+    query: attach the gripper to the Flex gantry
+    relevant:
+      - doc:flex/installation/instruments/#gripper-installation
+      - doc:flex/touchscreen/instruments/#attach-an-instrument
+  - query_id: c-hw-006
+    category: hardware
+    query: how does the Flex detect if a tip is attached
+    relevant:
+      - doc:flex/system-description/pipettes/#pipette-sensors
+  - query_id: c-hw-007
+    category: hardware
+    query: OT-2 GEN2 pipettes compared to GEN1
+    relevant:
+      - doc:ot-2/pipettes/#gen2-pipettes
+      - doc:python-api/pipettes/characteristics/#ot-2-pipette-generations
+  - query_id: c-hw-008
+    category: hardware
+    query: staging area slots in column 4
+    relevant:
+      - doc:flex/system-description/robot/#staging-area-slots
+      - doc:python-api/deck-slots/#staging-area-slots
+  - query_id: c-hw-009
+    category: hardware
+    query: moving the robot to another lab building
+    relevant:
+      - doc:flex/installation/relocation/#long-distance-moves
+      - doc:ot-2/installation/relocation/#long-distance-moves
+  - query_id: c-hw-010
+    category: hardware
+    query: unpack the Flex from its crate
+    relevant:
+      - doc:flex/installation/unboxing/
+  - query_id: c-hw-011
+    category: hardware
+    query: HEPA/UV module UV disinfection cycle
+    relevant:
+      - doc:flex/modules/hepa-uv/#uv-disinfection
+      - doc:hepa-uv/uv-specs/
+  - query_id: c-hw-012
+    category: hardware
+    query: thermocycler block temperature range and ramp rates
+    relevant:
+      - doc:flex/modules/thermocycler/#thermocycler-specifications
+      - doc:thermocycler/product-specs/#temperature-profile
+      - doc:ot-2/modules/thermocycler/#thermocycler-specifications
+  - query_id: c-hw-013
+    category: hardware
+    query: heater shaker maximum speed and temperature
+    relevant:
+      - doc:heater-shaker/product-specs/#shaking-profile
+      - doc:heater-shaker/product-specs/#temperature-profile
+      - doc:flex/modules/heater-shaker/#heater-shaker-specifications
+      - doc:ot-2/modules/heater-shaker/#heater-shaker-specifications
+  # --- Calibration, app, touchscreen ----------------------------------------
+  - query_id: c-app-001
+    category: app_software
+    query: run labware position check before starting
+    relevant:
+      - doc:flex/touchscreen/protocol-setup/#labware-position-check
+      - doc:ot-2/calibration/labware-offsets/#running-labware-position-check
+  - query_id: c-app-002
+    category: app_software
+    query: calibrate the pipette after attaching it
+    relevant:
+      - doc:flex/system-description/pipettes/#pipette-calibration
+      - doc:ot-2/calibration/robot-calibration/#pipette-offset-calibration
+      - doc:flex/touchscreen/instruments/#recalibrate-an-instrument
+  - query_id: c-app-003
+    category: app_software
+    query: OT-2 deck calibration and tip length calibration
+    relevant:
+      - doc:ot-2/calibration/robot-calibration/
+  - query_id: c-app-004
+    category: app_software
+    query: install the Opentrons App on Linux
+    relevant:
+      - doc:flex/opentrons-app/install/#ubuntu
+      - doc:ot-2/opentrons-app/installation/#ubuntu
+  - query_id: c-app-005
+    category: app_software
+    query: go back to an older robot software version
+    relevant:
+      - doc:flex/opentrons-app/flex-downgrade/
+      - doc:ot-2/opentrons-app/ot2-downgrade/
+      - doc:flex/opentrons-app/install/#downgrading-app-software
+  - query_id: c-app-006
+    category: app_software
+    query: connect to the robot over SSH
+    relevant:
+      - doc:flex/advanced-operation/command-line/
+      - doc:ot-2/advanced-operation/ssh/
+  - query_id: c-app-007
+    category: app_software
+    query: set up a quick transfer on the touchscreen without writing code
+    relevant:
+      - doc:flex/touchscreen/quick-transfer/
+  - query_id: c-app-008
+    category: app_software
+    query: robot hit an error mid-run, how do I recover without restarting
+    relevant:
+      - doc:flex/touchscreen/protocol-run/#error-recovery
+  - query_id: c-app-009
+    category: app_software
+    query: download logs to send to support
+    relevant:
+      - doc:flex/advanced-operation/diagnostic-files/
+      - doc:ot-2/advanced-operation/log-files/
+  - query_id: c-app-010
+    category: app_software
+    query: tell the robot which fixtures are installed on the deck
+    relevant:
+      - doc:flex/touchscreen/deck-config/
+      - doc:python-api/deck-slots/#deck-configuration
+  - query_id: c-app-011
+    category: app_software
+    query: connect the Flex to wifi
+    relevant:
+      - doc:flex/installation/first-run/#wi-fi
+      - doc:flex/touchscreen/settings/#network-settings
+  # --- Protocol Designer -----------------------------------------------------
+  - query_id: c-pd-001
+    category: protocol_designer
+    query: add a transfer step in Protocol Designer
+    relevant:
+      - doc:protocol-designer/steps/transfer/
+      - doc:flex/protocols/designer/#edit-steps
+  - query_id: c-pd-002
+    category: protocol_designer
+    query: assign liquids to wells in Protocol Designer
+    relevant:
+      - doc:protocol-designer/starting-deck/#liquids-in-labware
+      - doc:protocol-designer/starting-deck/#liquids
+  - query_id: c-pd-003
+    category: protocol_designer
+    query: export a protocol from Protocol Designer to run it
+    relevant:
+      - doc:protocol-designer/export-protocol/
+      - doc:flex/protocols/designer/#part-3-export-a-protocol
+  - query_id: c-pd-004
+    category: protocol_designer
+    query: thermocycler step in Protocol Designer
+    relevant:
+      - doc:protocol-designer/steps/module/#thermocycler-module-steps
+  - query_id: c-pd-005
+    category: protocol_designer
+    query: Protocol Designer says there is a collision warning
+    relevant:
+      - doc:protocol-designer/steps/transfer/#collision-errors
+      - doc:protocol-designer/warnings-errors/
+  # --- Maintenance and troubleshooting --------------------------------------
+  - query_id: c-mnt-001
+    category: maintenance
+    query: what can I use to clean the deck
+    relevant:
+      - doc:flex/maintenance/cleaning/#deck-cleaning
+      - doc:flex/maintenance/cleaning/#cleaning-solutions
+      - doc:ot-2/maintenance/cleaning/#deck-cleaning
+  - query_id: c-mnt-002
+    category: maintenance
+    query: replace the O-ring on a pipette
+    relevant:
+      - doc:flex/maintenance/cleaning/#pipette-o-ring-replacement
+      - doc:ot-2/maintenance/cleaning/#replacing-pipette-o-rings
+  - query_id: c-mnt-003
+    category: maintenance
+    query: replace the HEPA filter
+    relevant:
+      - doc:hepa-uv/maintenance/#filter-maintenance
+  - query_id: c-mnt-004
+    category: maintenance
+    query: my protocol runs out of tips with an index error
+    relevant:
+      - guide:out_of_tips_error_219.md
+      - doc:python-api/complex-commands/order-operations/#tip-refilling
+  - query_id: c-mnt-005
+    category: maintenance
+    query: thermocycler error code meanings
+    relevant:
+      - doc:thermocycler/error-codes/
+  # --- Compliance-ready software --------------------------------------------
+  - query_id: c-cmp-001
+    category: compliance
+    query: 21 CFR Part 11 audit trail for Flex runs
+    relevant:
+      - doc:compliance-ready-software/glossary/#21-cfr-part-11
+      - doc:compliance-ready-software/features/admin/#audit-log-folder
+      - doc:flex/advanced-operation/compliance-ready/
+  - query_id: c-cmp-002
+    category: compliance
+    query: add a user account with admin permissions
+    relevant:
+      - doc:compliance-ready-software/features/admin/#user-management
+  - query_id: c-cmp-003
+    category: compliance
+    query: activate compliance ready software with an encryption key
+    relevant:
+      - doc:compliance-ready-software/activation/

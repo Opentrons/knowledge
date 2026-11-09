@@ -67,6 +67,82 @@ pack-9-1-1-k1:
 ci: lint typecheck test fixture-corpus
 
 # -----------------------------------------------------------------------------
+# Canonical docs corpus (rendered MkDocs HTML)
+# -----------------------------------------------------------------------------
+
+docs_manifest := "corpora/10.0.0-k2/source-manifest.yaml"
+
+# Render the pinned Opentrons MkDocs site into dist/.work (isolated checkout)
+docs-build-site:
+    {{ python }} opentrons-knowledge docs build-site \
+        --manifest {{ docs_manifest }} \
+        --opentrons-repo {{ opentrons_repo }}
+
+# Render the pinned site and write dist/canonical-docs
+docs-build:
+    {{ python }} opentrons-knowledge docs build \
+        --manifest {{ docs_manifest }} \
+        --opentrons-repo {{ opentrons_repo }} \
+        --output dist/canonical-docs
+
+# Validate dist/canonical-docs (checksums, inventory, section graph)
+docs-validate:
+    {{ python }} opentrons-knowledge docs validate --corpus dist/canonical-docs
+
+# Summarize dist/canonical-docs, or one page with DOC=python-api/pipettes/loading/
+docs-inspect:
+    {{ python }} opentrons-knowledge docs inspect --corpus dist/canonical-docs \
+        {{ if env_var_or_default("DOC", "") != "" { "--document " + env_var("DOC") } else { "" } }}
+
+# -----------------------------------------------------------------------------
+# Retrieval (documents, chunks, HDE-native BM25 index)
+# -----------------------------------------------------------------------------
+
+retrieval_corpus := "dist/opentrons-knowledge-10.0.0-k3"
+
+# Build the 10.0.0-k3 corpus (canonical docs + retrieval bundle + experiment report)
+build-10-0-0-k3:
+    {{ python }} opentrons-knowledge build \
+        --manifest corpora/10.0.0-k3/source-manifest.yaml \
+        --opentrons-repo {{ opentrons_repo }} \
+        --output dist
+
+# Re-run the retrieval experiment grid against a built corpus
+retrieval-experiment:
+    {{ python }} opentrons-knowledge retrieval experiment \
+        --corpus {{ retrieval_corpus }} \
+        --report dist/retrieval-eval.json \
+        --markdown dist/retrieval-eval.md
+
+# Validate the retrieval bundle in the built corpus
+retrieval-validate:
+    {{ python }} opentrons-knowledge retrieval validate --bundle {{ retrieval_corpus }}/retrieval
+
+# Search the built bundle: just retrieval-search "InstrumentContext.blow_out" api
+retrieval-search query index="all":
+    {{ python }} opentrons-knowledge retrieval search "{{ query }}" \
+        --bundle {{ retrieval_corpus }}/retrieval --index {{ index }}
+
+# Interactive search over both indexes
+retrieval-explore:
+    {{ python }} opentrons-knowledge retrieval explore \
+        --bundle {{ retrieval_corpus }}/retrieval
+
+# Every documented symbol must come back as the first API hit
+retrieval-audit:
+    {{ python }} opentrons-knowledge retrieval audit \
+        --bundle {{ retrieval_corpus }}/retrieval
+
+# Regenerate schemas/canonical-*.schema.json and retrieval-*.schema.json
+schemas:
+    {{ python }} python scripts/write_canonical_schemas.py
+
+# Slow tests against a real Opentrons checkout (builds the pinned docs site)
+test-integration:
+    OPENTRONS_KNOWLEDGE_INTEGRATION=1 OPENTRONS_REPO={{ opentrons_repo }} \
+        {{ python }} pytest -q -m integration tests/integration
+
+# -----------------------------------------------------------------------------
 # GitHub Actions (zizmor)
 # -----------------------------------------------------------------------------
 

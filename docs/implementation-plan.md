@@ -26,7 +26,8 @@ relationships | examples | constraints | source_files
 Publication formats are `opentrons-knowledge-<version>.tar.zst` (GitHub Releases)
 and `ghcr.io/opentrons/opentrons-knowledge:<version>` (ORAS/OCI).
 No lookup consumer API; on-disk JSONL under `corpus/` is the interface.
-No shipped indexes or embeddings.
+No shipped embeddings. From `10.0.0-k3`, a BM25 index ships under `retrieval/`,
+selected by the evaluation in [retrieval-experiments.md](retrieval-experiments.md).
 
 ## Phase 8: CI and release automation — done
 

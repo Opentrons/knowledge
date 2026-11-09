@@ -16,6 +16,9 @@ dependencies = [
   "zstandard>=0.23",
   "structlog>=24.4",
   "packaging>=24.2",
+  "beautifulsoup4>=4.13",
+  "lxml>=5.3",
+  "tantivy==0.25.1",
 ]
 
 [project.optional-dependencies]

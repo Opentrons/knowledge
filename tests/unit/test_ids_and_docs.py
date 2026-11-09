@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from opentrons_knowledge.docs.markdown import parse_markdown_document
+from opentrons_knowledge.docs.markdown import parse_markdown_document, split_front_matter
 from opentrons_knowledge.models.enums import AuthorityLevel
 from opentrons_knowledge.normalization.ids import (
     document_id,
@@ -40,6 +40,17 @@ def test_github_and_rendered_urls() -> None:
     assert rendered == (
         "https://docs.opentrons.com/python-api/building-block-commands/liquids/#aspirate"
     )
+
+
+def test_tight_quoted_front_matter_keeps_colons_in_the_value() -> None:
+    meta, body = split_front_matter(
+        '---\ntitle:"Opentrons Flex: Opentrons App"\ndescription: "Use the app."\n---\n\nBody\n'
+    )
+    assert meta == {
+        "title": "Opentrons Flex: Opentrons App",
+        "description": "Use the app.",
+    }
+    assert body == "Body\n"
 
 
 def test_markdown_sections_and_examples(tmp_path: Path) -> None:

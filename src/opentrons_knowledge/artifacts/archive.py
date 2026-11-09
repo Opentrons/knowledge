@@ -8,6 +8,7 @@ from pathlib import Path
 
 import zstandard as zstd
 
+from opentrons_knowledge.artifacts.package import artifact_files
 from opentrons_knowledge.errors import ArtifactError
 from opentrons_knowledge.models.manifest import CorpusManifest
 from opentrons_knowledge.normalization.serialize import file_sha256, load_yaml
@@ -42,9 +43,8 @@ def pack_corpus(
         compressor.stream_writer(raw) as zst_out,
         tarfile.open(fileobj=zst_out, mode="w|") as tar,
     ):
-        for path in sorted(corpus_root.rglob("*")):
-            if path.is_file():
-                tar.add(path, arcname=path.relative_to(corpus_root).as_posix())
+        for path in artifact_files(corpus_root):
+            tar.add(path, arcname=path.relative_to(corpus_root).as_posix())
 
     digest = file_sha256(archive_path)
     return {

@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentrons.com/schemas/opentrons-knowledge/canonical-manifest.schema.json",
+  "$defs": {
+    "CanonicalArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "format": {
+          "default": "jsonl",
+          "title": "Format",
+          "type": "string"
+        },
+        "compression": {
+          "default": "zstd",
+          "title": "Compression",
+          "type": "string"
+        },
+        "record_count": {
+          "title": "Record Count",
+          "type": "integer"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "uncompressed_sha256": {
+          "title": "Uncompressed Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "record_count",
+        "sha256",
+        "uncompressed_sha256"
+      ],
+      "title": "CanonicalArtifact",
+      "type": "object"
+    },
+    "CanonicalBuildInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "mkdocs_config": {
+          "title": "Mkdocs Config",
+          "type": "string"
+        },
+        "working_directory": {
+          "title": "Working Directory",
+          "type": "string"
+        },
+        "setup_command": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Setup Command",
+          "type": "array"
+        },
+        "build_command": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Build Command",
+          "type": "array"
+        },
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "site_dir": {
+          "title": "Site Dir",
+          "type": "string"
+        },
+        "base_url": {
+          "title": "Base Url",
+          "type": "string"
+        },
+        "generator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generator"
+        },
+        "prebuilt_site": {
+          "default": false,
+          "title": "Prebuilt Site",
+          "type": "boolean"
+        },
+        "modified_files": {
+          "description": "Tracked files rewritten by the docs build itself (e.g. a stale uv.lock).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Modified Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mkdocs_config",
+        "working_directory",
+        "setup_command",
+        "build_command",
+        "site_dir",
+        "base_url"
+      ],
+      "title": "CanonicalBuildInfo",
+      "type": "object"
+    },
+    "CanonicalDocumentEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "page_path": {
+          "title": "Page Path",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "markdown_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markdown Path"
+        },
+        "section_count": {
+          "title": "Section Count",
+          "type": "integer"
+        },
+        "search_exclude": {
+          "default": false,
+          "title": "Search Exclude",
+          "type": "boolean"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id",
+        "page_path",
+        "title",
+        "section_count",
+        "content_hash"
+      ],
+      "title": "CanonicalDocumentEntry",
+      "type": "object"
+    },
+    "CanonicalExtractorInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        },
+        "builder_version": {
+          "title": "Builder Version",
+          "type": "string"
+        },
+        "html_parser": {
+          "title": "Html Parser",
+          "type": "string"
+        },
+        "dependencies": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "object"
+        },
+        "icon_shortcodes": {
+          "default": 0,
+          "title": "Icon Shortcodes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "builder_version",
+        "html_parser"
+      ],
+      "title": "CanonicalExtractorInfo",
+      "type": "object"
+    },
+    "CanonicalSourceInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "commit": {
+          "title": "Commit",
+          "type": "string"
+        },
+        "dirty": {
+          "default": false,
+          "title": "Dirty",
+          "type": "boolean"
+        },
+        "mkdocs_extra": {
+          "additionalProperties": true,
+          "title": "Mkdocs Extra",
+          "type": "object"
+        }
+      },
+      "required": [
+        "repository",
+        "commit"
+      ],
+      "title": "CanonicalSourceInfo",
+      "type": "object"
+    },
+    "ExcludedPage": {
+      "additionalProperties": false,
+      "properties": {
+        "html_path": {
+          "title": "Html Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "html_path",
+        "reason"
+      ],
+      "title": "ExcludedPage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {
+      "const": "opentrons-knowledge.canonical-docs",
+      "default": "opentrons-knowledge.canonical-docs",
+      "title": "Schema Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "corpus_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Corpus Version"
+    },
+    "source": {
+      "$ref": "#/$defs/CanonicalSourceInfo"
+    },
+    "build": {
+      "$ref": "#/$defs/CanonicalBuildInfo"
+    },
+    "extractor": {
+      "$ref": "#/$defs/CanonicalExtractorInfo"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/CanonicalArtifact"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "document_count": {
+      "title": "Document Count",
+      "type": "integer"
+    },
+    "section_count": {
+      "title": "Section Count",
+      "type": "integer"
+    },
+    "block_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Block Counts",
+      "type": "object"
+    },
+    "documents": {
+      "items": {
+        "$ref": "#/$defs/CanonicalDocumentEntry"
+      },
+      "title": "Documents",
+      "type": "array"
+    },
+    "excluded_pages": {
+      "items": {
+        "$ref": "#/$defs/ExcludedPage"
+      },
+      "title": "Excluded Pages",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source",
+    "build",
+    "extractor",
+    "artifacts",
+    "document_count",
+    "section_count",
+    "documents"
+  ],
+  "title": "CanonicalManifest",
+  "type": "object"
+}

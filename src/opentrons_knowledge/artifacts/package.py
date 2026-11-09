@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from opentrons_knowledge.artifacts.raw_sources import validate_raw_layout
+from opentrons_knowledge.docs.canonical import CANONICAL_DIR, validate_canonical_corpus
 from opentrons_knowledge.errors import CorpusValidationError
 from opentrons_knowledge.models.manifest import CorpusManifest
 from opentrons_knowledge.normalization.serialize import (
@@ -19,6 +20,7 @@ from opentrons_knowledge.normalization.serialize import (
     write_json,
     write_yaml,
 )
+from opentrons_knowledge.retrieval.bundle import RETRIEVAL_DIR, validate_bundle
 
 CORPUS_FILES = (
     "documents.jsonl.zst",
@@ -45,16 +47,33 @@ def write_build_reports(reports_dir: Path, reports: dict[str, Any]) -> dict[str,
 
 
 def compute_checksums(corpus_root: Path) -> dict[str, str]:
-    """Hash all files under corpus_root except checksums.txt itself."""
+    """Hash all files under corpus_root except checksums.txt and runtime lock files."""
     checksums: dict[str, str] = {}
-    for path in sorted(corpus_root.rglob("*")):
-        if not path.is_file():
-            continue
+    for path in artifact_files(corpus_root):
         rel = path.relative_to(corpus_root).as_posix()
         if rel == "checksums.txt":
             continue
         checksums[rel] = file_sha256(path)
     return checksums
+
+
+def artifact_files(corpus_root: Path) -> list[Path]:
+    """List the files that make up a corpus, sorted.
+
+    Tantivy creates empty ``.tantivy-*.lock`` files whenever an index is
+    opened; they are runtime state, so they are neither checksummed nor packed.
+
+    Args:
+        corpus_root: Corpus directory.
+
+    Returns:
+        Files under the corpus, excluding Tantivy lock files.
+    """
+    return [
+        path
+        for path in sorted(corpus_root.rglob("*"))
+        if path.is_file() and not (path.name.startswith(".tantivy-") and path.suffix == ".lock")
+    ]
 
 
 def finalize_checksums(corpus_root: Path) -> dict[str, str]:
@@ -79,6 +98,12 @@ def validate_corpus_dir(corpus_root: Path) -> CorpusManifest:
     data = load_yaml(manifest_path)
     manifest = CorpusManifest.model_validate(data)
     validate_raw_layout(corpus_root, [s.key for s in manifest.sources])
+    if (corpus_root / CANONICAL_DIR).exists():
+        validate_canonical_corpus(corpus_root / CANONICAL_DIR)
+    if (corpus_root / RETRIEVAL_DIR).exists():
+        problems = validate_bundle(corpus_root / RETRIEVAL_DIR)
+        if problems:
+            raise CorpusValidationError(f"Invalid {RETRIEVAL_DIR}/: {'; '.join(problems)}")
 
     expected = read_checksums(checksums_path)
     actual = compute_checksums(corpus_root)
@@ -137,7 +162,7 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
     Agents commonly look for AGENTS.md / llms.txt at the artifact root and a
     fuller guide under docs/.
     """
-    for relative in ("AGENTS.md", "docs/agent-usage.md"):
+    for relative in ("AGENTS.md", "docs/agent-usage.md", "docs/retrieval-tool.md"):
         source = repo_root / relative
         if not source.exists():
             continue
@@ -158,12 +183,16 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
                 "",
                 "- [AGENTS.md](AGENTS.md): short agent entrypoint",
                 "- [docs/agent-usage.md](docs/agent-usage.md): full agent guide",
+                "- [docs/retrieval-tool.md](docs/retrieval-tool.md): "
+                "how to query when search is a tool",
                 "- [manifest.yaml](manifest.yaml): version, sources, schema, digest",
                 "",
                 "## Data",
                 "",
                 "- raw/: verbatim pinned source files (monorepo layout per source key)",
-                "- corpus/*.jsonl.zst: normalized records (build your own indexes)",
+                "- corpus/*.jsonl.zst: normalized records",
+                "- retrieval/ when present: api/bm25 for the Python API, docs/bm25 for the rest",
+                "- canonical/ (when present): structured pages from rendered MkDocs HTML",
                 "- schemas/: JSON schemas",
                 "- reports/: build and compatibility reports",
                 "",

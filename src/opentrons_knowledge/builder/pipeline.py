@@ -25,13 +25,23 @@ from opentrons_knowledge.artifacts.package import (
 )
 from opentrons_knowledge.artifacts.raw_sources import copy_raw_sources
 from opentrons_knowledge.compatibility.validate import validate_compatibility
+from opentrons_knowledge.docs.canonical import (
+    CANONICAL_DIR,
+    build_canonical_corpus,
+    load_canonical_documents,
+)
 from opentrons_knowledge.docs.markdown import ingest_docs_tree
+from opentrons_knowledge.docs.mkdocs_build import RenderedSite, build_site, prebuilt_site
+from opentrons_knowledge.errors import SourceResolutionError
+from opentrons_knowledge.models.canonical import CanonicalManifest
 from opentrons_knowledge.models.enums import AuthorityLevel, CompatibilityStatus
 from opentrons_knowledge.models.manifest import (
     BuilderInfo,
     CorpusManifest,
     EnvironmentInfo,
+    RenderedDocsConfig,
     ResolvedSource,
+    RetrievalSettings,
     SourceManifest,
 )
 from opentrons_knowledge.models.records import (
@@ -51,8 +61,11 @@ from opentrons_knowledge.normalization.serialize import (
 )
 from opentrons_knowledge.python_api.ast_symbols import ingest_protocol_api
 from opentrons_knowledge.relationships.build import build_knowledge_graph
+from opentrons_knowledge.retrieval.build import RetrievalBuild, build_retrieval
+from opentrons_knowledge.retrieval.bundle import RETRIEVAL_DIR
+from opentrons_knowledge.retrieval.documents import RetrievalInputs
 from opentrons_knowledge.shared_data.entities import ingest_shared_data
-from opentrons_knowledge.sources.resolve import MaterializedSources, resolve_sources
+from opentrons_knowledge.sources.resolve import MaterializedSources, locate_repo, resolve_sources
 
 log = structlog.get_logger(__name__)
 
@@ -205,6 +218,34 @@ def build_corpus(
             corpus_root / "corpus" / "source-files.jsonl.zst", source_files
         ),
     }
+    canonical_metadata: dict[str, object] = {}
+    if manifest.rendered_docs is not None:
+        site = _render_pinned_docs(
+            manifest,
+            materialized,
+            work_root=work_root or output_dir / ".work",
+            search_roots=search_roots,
+        )
+        canonical = build_canonical_corpus(
+            site, corpus_root / CANONICAL_DIR, corpus_version=version
+        )
+        counts["canonical_documents"] = canonical.document_count
+        canonical_metadata = _canonical_metadata(canonical)
+    retrieval_report: dict[str, object] | None = None
+    if manifest.retrieval is not None:
+        retrieval, retrieval_metadata = _build_retrieval(
+            manifest.retrieval,
+            corpus_root,
+            version=version,
+            documents=documents,
+            sections=sections,
+            symbols=symbols,
+            entities=entities,
+        )
+        counts["retrieval_documents"] = retrieval.manifest.document_count
+        counts["retrieval_chunks"] = retrieval.manifest.chunk_count
+        canonical_metadata.update(retrieval_metadata)
+        retrieval_report = retrieval.report
 
     repo_root = Path(__file__).resolve().parents[3]
     if schemas_dir is None:
@@ -242,6 +283,8 @@ def build_corpus(
             "conflicts": graph.conflicts,
         },
     }
+    if retrieval_report is not None:
+        reports["retrieval-eval"] = retrieval_report
     write_build_reports(corpus_root / "reports", reports)
 
     env = EnvironmentInfo(
@@ -270,6 +313,7 @@ def build_corpus(
         metadata={
             "compatibility_overall": compat_report.overall_status.value,
             "raw_file_counts": raw_counts,
+            **canonical_metadata,
         },
     )
     write_manifest(corpus_root, corpus_manifest)
@@ -392,6 +436,19 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
             materialize_root=str(dest),
         )
 
+    rendered_fixture = fixtures_root.parent / "rendered_site"
+    rendered_site = (
+        prebuilt_site(
+            site_dir=rendered_fixture / "site",
+            checkout=rendered_fixture / "checkout",
+            repository="https://github.com/Opentrons/opentrons",
+            settings=RenderedDocsConfig(),
+            commit="0" * 40,
+        )
+        if (rendered_fixture / "site").is_dir()
+        else None
+    )
+
     # Temporarily monkey-patch resolve by writing a one-off build using materialized map
     return _build_from_materialized(
         fixture_manifest,
@@ -399,6 +456,8 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
         output_dir=output_dir,
         schemas_dir=Path(__file__).resolve().parents[3] / "schemas",
         compatibility_dir=None,
+        rendered_site=rendered_site,
+        retrieval=RetrievalSettings(queries=None, run_experiments=False),
     )
 
 
@@ -409,6 +468,8 @@ def _build_from_materialized(
     output_dir: Path,
     schemas_dir: Path,
     compatibility_dir: Path | None,
+    rendered_site: RenderedSite | None = None,
+    retrieval: RetrievalSettings | None = None,
 ) -> BuildResult:
     started = time.perf_counter()
     compat_report = validate_compatibility(
@@ -500,6 +561,26 @@ def _build_from_materialized(
             corpus_root / "corpus" / "source-files.jsonl.zst", source_files
         ),
     }
+    canonical_metadata: dict[str, object] = {}
+    if rendered_site is not None:
+        canonical = build_canonical_corpus(
+            rendered_site, corpus_root / CANONICAL_DIR, corpus_version=version
+        )
+        counts["canonical_documents"] = canonical.document_count
+        canonical_metadata = _canonical_metadata(canonical)
+        if retrieval is not None:
+            built, retrieval_metadata = _build_retrieval(
+                retrieval,
+                corpus_root,
+                version=version,
+                documents=documents,
+                sections=sections,
+                symbols=symbols,
+                entities=entities,
+            )
+            counts["retrieval_documents"] = built.manifest.document_count
+            counts["retrieval_chunks"] = built.manifest.chunk_count
+            canonical_metadata.update(retrieval_metadata)
     repo_root = Path(__file__).resolve().parents[3]
     copy_schemas(schemas_dir, corpus_root / "schemas")
     copy_agent_guides(repo_root, corpus_root)
@@ -541,7 +622,7 @@ def _build_from_materialized(
             build_timestamp="1970-01-01T00:00:00+00:00",
         ),
         record_counts=counts,
-        metadata={"raw_file_counts": raw_counts},
+        metadata={"raw_file_counts": raw_counts, **canonical_metadata},
     )
     write_manifest(corpus_root, corpus_manifest)
     finalize_checksums(corpus_root)
@@ -554,6 +635,89 @@ def _build_from_materialized(
     write_manifest(corpus_root, corpus_manifest)
     finalize_checksums(corpus_root)
     return BuildResult(corpus_root=corpus_root, manifest=corpus_manifest, duration_seconds=duration)
+
+
+def _render_pinned_docs(
+    manifest: SourceManifest,
+    materialized: MaterializedSources,
+    *,
+    work_root: Path,
+    search_roots: list[Path],
+) -> RenderedSite:
+    """Render the MkDocs site at the commit already resolved for ``rendered_docs.source``."""
+    settings = manifest.rendered_docs
+    assert settings is not None
+    entry = manifest.sources[settings.source]
+    resolved = materialized.sources[settings.source]
+    site = build_site(
+        repository=entry.repository,
+        ref=entry.tag or resolved.commit,
+        settings=settings,
+        work_root=work_root,
+        local_repo=locate_repo(entry, search_roots),
+    )
+    if site.commit != resolved.commit:
+        msg = (
+            f"Rendered docs commit {site.commit} differs from resolved "
+            f"{settings.source} commit {resolved.commit}"
+        )
+        raise SourceResolutionError(msg)
+    return site
+
+
+def _build_retrieval(
+    settings: RetrievalSettings,
+    corpus_root: Path,
+    *,
+    version: str,
+    documents: Sequence[Document],
+    sections: Sequence[Section],
+    symbols: Sequence[CodeSymbol],
+    entities: Sequence[Entity],
+) -> tuple[RetrievalBuild, dict[str, object]]:
+    guides = [d for d in documents if d.source_type == "ai_guidance"]
+    guide_ids = {d.document_id for d in guides}
+    inputs = RetrievalInputs(
+        canonical_documents=load_canonical_documents(corpus_root / CANONICAL_DIR),
+        symbols=symbols,
+        entities=entities,
+        guide_documents=guides,
+        guide_sections=[s for s in sections if s.document_id in guide_ids],
+    )
+    repo_root = Path(__file__).resolve().parents[3]
+    result = build_retrieval(
+        inputs,
+        corpus_root / RETRIEVAL_DIR,
+        settings.config(),
+        corpus_version=version,
+        queries_path=repo_root / settings.queries if settings.queries else None,
+        run_grid=settings.run_experiments,
+    )
+    manifest = result.manifest
+    metadata: dict[str, object] = {
+        "retrieval": {
+            "path": f"{RETRIEVAL_DIR}/",
+            "schema_id": manifest.schema_id,
+            "schema_version": manifest.schema_version,
+            "config": manifest.config.name,
+            "document_count": manifest.document_count,
+            "chunk_count": manifest.chunk_count,
+        }
+    }
+    return result, metadata
+
+
+def _canonical_metadata(canonical: CanonicalManifest) -> dict[str, object]:
+    return {
+        "canonical_docs": {
+            "path": f"{CANONICAL_DIR}/",
+            "schema_id": canonical.schema_id,
+            "schema_version": canonical.schema_version,
+            "commit": canonical.source.commit,
+            "document_count": canonical.document_count,
+            "section_count": canonical.section_count,
+        }
+    }
 
 
 def _write_records(path: Path, records: Sequence[BaseModel]) -> int:

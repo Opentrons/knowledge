@@ -16,6 +16,8 @@ from opentrons_knowledge.builder.pipeline import (
     build_fixture_corpus,
     load_source_manifest,
 )
+from opentrons_knowledge.cli.docs import docs_app
+from opentrons_knowledge.cli.retrieval import retrieval_app
 from opentrons_knowledge.consumer.corpus import Corpus, diff_corpora
 from opentrons_knowledge.registry.oras import publish_corpus, pull_corpus
 
@@ -24,6 +26,8 @@ app = typer.Typer(
     help="Build, validate, and publish Opentrons Knowledge corpora.",
     no_args_is_help=True,
 )
+app.add_typer(docs_app, name="docs")
+app.add_typer(retrieval_app, name="retrieval")
 
 
 @app.command()

@@ -122,7 +122,7 @@ def resolve_sources(
     work_root.mkdir(parents=True, exist_ok=True)
 
     for key, entry in sorted(manifest.sources.items()):
-        root = _locate_repo(entry, search_roots)
+        root = locate_repo(entry, search_roots)
         ref = entry.commit or entry.tag
         assert ref is not None
         commit = resolve_commit(root, ref)
@@ -152,7 +152,8 @@ def resolve_sources(
     return MaterializedSources(sources=resolved, work_root=work_root)
 
 
-def _locate_repo(entry: SourceEntry, search_roots: list[Path]) -> Path:
+def locate_repo(entry: SourceEntry, search_roots: list[Path]) -> Path:
+    """Find the local git checkout that provides a manifest source entry."""
     if entry.local_path:
         path = Path(entry.local_path).expanduser().resolve()
         if not path.exists():

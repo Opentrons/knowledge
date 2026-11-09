@@ -22,6 +22,9 @@ from opentrons_knowledge.normalization.ids import (
 )
 
 FRONT_MATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
+# `title:"Foo: Bar"` is a plain key in YAML, because the colon is not followed by
+# a space. Authors in the docs repo write it meaning a quoted value.
+_TIGHT_QUOTE_RE = re.compile(r"^([A-Za-z0-9_-]+):([\"'])", re.MULTILINE)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 EXPLICIT_ANCHOR_RE = re.compile(r"\{?\s*#([A-Za-z0-9_.:-]+)\s*\}?\s*$")
 CODE_FENCE_RE = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
@@ -128,7 +131,7 @@ def parse_markdown_document(
 ) -> ParsedDocBundle:
     """Parse one Markdown file into document/section/example records."""
     text = path.read_text(encoding="utf-8")
-    meta, body = _split_front_matter(text)
+    meta, body = split_front_matter(text)
     title = str(meta.get("title") or _first_heading(body) or path.stem)
     doc_id = document_id(repository, commit, source_path)
     source_url = github_blob_url(repository, commit, source_path)
@@ -227,11 +230,12 @@ def ingest_docs_tree(
     return bundle
 
 
-def _split_front_matter(text: str) -> tuple[dict[str, Any], str]:
+def split_front_matter(text: str) -> tuple[dict[str, Any], str]:
+    """Split YAML front matter from a Markdown body (invalid YAML yields ``{}``)."""
     match = FRONT_MATTER_RE.match(text)
     if not match:
         return {}, text
-    meta_raw = match.group(1)
+    meta_raw = _TIGHT_QUOTE_RE.sub(r"\1: \2", match.group(1))
     try:
         meta = yaml.safe_load(meta_raw) or {}
     except yaml.YAMLError:
