@@ -57,9 +57,12 @@ Logical separation is stable even if compression formats evolve:
   `schema_version` (see [retrieval-design.md](retrieval-design.md))
 
 There is no embeddings file. From `10.0.0-k3` the bundle ships two BM25 indexes,
-`retrieval/api/bm25/` and `retrieval/docs/bm25/`, chosen for the two kinds of
-question an agent asks (see [retrieval-design.md](retrieval-design.md) and
-[retrieval-experiments.md](retrieval-experiments.md)). Tantivy names its segment
+`retrieval/api/bm25/` and `retrieval/docs/bm25/`. A search hit returns every
+chunk of the matched section. Searching both indexes together merges the two
+rankings at query time and stores nothing extra. See
+[retrieval-design.md](retrieval-design.md),
+[retrieval-experiments.md](retrieval-experiments.md), and
+[retrieval-tool.md](retrieval-tool.md). Tantivy names its segment
 files randomly, so those directories are checked by opening them, not by byte
 digest; every other retrieval file is byte-reproducible. Tantivy's
 `.tantivy-*.lock` runtime files are excluded from `checksums.txt`.

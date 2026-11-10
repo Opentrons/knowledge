@@ -4,6 +4,11 @@ Findings from inspecting the local Opentrons monorepo at
 `/Users/joshmcvey/github/opentrons/opentrons` for the first corpus target
 `9.1.1-k1` (Opentrons release `v9.1.1`).
 
+Current pins are `corpora/10.0.0-k3/source-manifest.yaml` (`v10.0.0`,
+`mkdocs-2026-09-30`, `ai-server@0.0.22`). This page records why the `9.1.1-k1`
+docs pin is not the release commit. That reason still holds: the docs tag and
+the robot-software tag move on different schedules.
+
 ## Summary
 
 | Concern | Finding |

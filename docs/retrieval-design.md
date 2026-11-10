@@ -35,13 +35,16 @@ Knowledge now ships, for each release:
 ## What changes and what does not
 
 - `9.1.2-k3` removed `indexes/` and embeddings because they were unmeasured and
-  partly fake (hash embeddings). `10.0.0-k3` brings a BM25 index back with an
-  evaluation behind it. Published revisions are not rebuilt.
+  partly fake (hash embeddings). `10.0.0-k3` brings two BM25 indexes back with
+  an evaluation behind the docs chunking and an audit behind the API index.
+  Published revisions are not rebuilt.
 - `corpus/*.jsonl.zst`, `raw/`, and `canonical/` are unchanged and remain the
   source of truth. `retrieval/` is derived from them and can be regenerated
   with `opentrons-knowledge retrieval build`.
-- Ranking stays a consumer concern at query time. We ship the index and the
-  reference query path, not a service.
+- This package searches a local bundle: `search_api`, `search_docs`, and
+  `fused_search` (the CLI `--index all`). A hit's text is every chunk of the
+  matched section. There is no hosted search service; a consumer can rank the
+  same files differently.
 
 ## Retrievable documents
 

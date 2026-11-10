@@ -23,7 +23,7 @@ sections. These include tabs, admonitions, macro-generated tables, and the API
 reference pages that the Markdown sources alone miss. See
 `docs/canonical-docs.md` in the Knowledge repository.
 
-### Added: `retrieval/` documents, chunks, and a BM25 index
+### Added: `retrieval/` documents, chunks, and two BM25 indexes
 
 This reverses the `9.1.2-k3` "no shipped indexes" policy, now that an
 evaluation stands behind the index.
@@ -47,8 +47,10 @@ Compared with one chunk per section and no context, the docs index improves
 curated MRR@10 from 0.501 to 0.601 and structural Hit@10 from 0.533 to 0.975.
 That comparison is what selected the docs chunking. Symbol sections then move
 to the API index, where all 325 documented names return their own section at
-rank 1 (`retrieval audit`). The curated questions are a draft awaiting
-docs-owner review. See `docs/retrieval-experiments.md`.
+rank 1 (`retrieval audit`). Searching both indexes together is a query-time
+merge in this package (CLI `--index all`); it is not stored in the artifact.
+The curated questions are a draft awaiting docs-owner review. See
+`docs/retrieval-experiments.md`.
 
 ### Unchanged
 

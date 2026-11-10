@@ -15,7 +15,7 @@ Four independent version axes:
 <opentrons-release>-k<knowledge-revision>
 ```
 
-Examples: `9.1.1-k1`, `9.1.1-k2`, `9.2.0-k1`.
+Examples: `9.1.1-k1`, `10.0.0-k1`, `10.0.0-k2`, `10.0.0-k3` (current).
 
 Do **not** encode source commits in the public version. Exact source identity
 belongs in the source manifest and corpus manifest.
@@ -27,14 +27,14 @@ same Opentrons release.
 ## Git Release Tag
 
 ```text
-knowledge-v9.1.1-k1
+knowledge-v10.0.0-k3
 ```
 
 ## Published artifacts
 
 ```text
-opentrons-knowledge-9.1.1-k1.tar.zst
-ghcr.io/opentrons/opentrons-knowledge:9.1.1-k1
+opentrons-knowledge-10.0.0-k3.tar.zst
+ghcr.io/opentrons/opentrons-knowledge:10.0.0-k3
 ```
 
 Published tags and release assets are immutable. Replacing a released filename

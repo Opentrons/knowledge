@@ -12,14 +12,14 @@ MCP server, or lookup SDK. The same corpus directory is published as both a
 Human-readable identity:
 
 ```text
-opentrons-knowledge:9.1.1-k1
+opentrons-knowledge:10.0.0-k3
 ```
 
-Published locations:
+Published locations (current corpus; the pattern is the same for every revision):
 
 ```text
-opentrons-knowledge-9.1.1-k1.tar.zst
-ghcr.io/opentrons/opentrons-knowledge:9.1.1-k1
+opentrons-knowledge-10.0.0-k3.tar.zst
+ghcr.io/opentrons/opentrons-knowledge:10.0.0-k3
 ghcr.io/opentrons/opentrons-knowledge@sha256:<digest>
 ```
 
@@ -40,12 +40,12 @@ sha256:<digest of the packed corpus / OCI manifest>
 | Artifact identity | Directory checksums + `.tar.zst` digest + OCI digest |
 
 Canonical corpus records must remain usable without any particular LLM provider,
-vector database, agent framework, or runtime service. **Embeddings and query-time
-ranking are out of scope** for this repository. A BM25 index is in scope from
-`10.0.0-k3` because an evaluation shows which index to build
+vector database, agent framework, or runtime service. Embeddings are out of
+scope. From `10.0.0-k3` a measured BM25 bundle is in scope
 ([retrieval-design.md](retrieval-design.md),
-[retrieval-experiments.md](retrieval-experiments.md)); it is derived from the
-corpus records and never replaces them.
+[retrieval-experiments.md](retrieval-experiments.md)): two indexes, derived from
+the corpus records, which they never replace. Searching them, including the
+merge of the two rankings, is a local query over those files.
 
 ## Package Layout
 
@@ -59,7 +59,7 @@ src/opentrons_knowledge/
   models/           # Pydantic canonical models + manifests
   normalization/    # IDs, hashing, deterministic JSONL
   relationships/    # relationship + constraint extraction
-  retrieval/        # retrieval documents, chunkers, BM25 index, evaluation, bundle
+  retrieval/        # retrieval documents, chunkers, two BM25 indexes, fusion, evaluation, bundle
   compatibility/    # compatibility validation
   artifacts/        # packaging, checksums, reports, tar.zst
   registry/         # ORAS publish/pull for OCI
@@ -106,20 +106,22 @@ Conflicts are never silently deleted.
 
 ## Consumer Boundary
 
-This package **builds, packs, and publishes** corpora. It does not provide a
-search service, embeddings, or `get_symbol`-style lookup APIs. Downstream
-systems unpack/pull the artifact and either search `retrieval/api/` and
-`retrieval/docs/` or read `corpus/` and `canonical/` with their own stack.
+This package **builds, packs, and publishes** corpora, and it searches a local
+bundle. It does not host a search service, ship embeddings, or offer a
+`get_symbol` lookup API. Downstream systems unpack or pull the artifact and
+search `retrieval/api/` and `retrieval/docs/` (separately, or merged with
+`fused_search` / the CLI `--index all`), or read `corpus/` and `canonical/`
+with their own stack.
 
 Agent-facing usage instructions ship in the repository and inside every corpus
-as `AGENTS.md`, `llms.txt`, and `docs/agent-usage.md`.
+as `AGENTS.md`, `llms.txt`, `docs/agent-usage.md`, and `docs/retrieval-tool.md`.
 
-## Non-Goals (initial product)
+## Non-Goals
 
-- Lookup / query SDK
+- A hosted search service (local search of `retrieval/` is in this package)
 - Vector indexes in the artifact (BM25 ships from `10.0.0-k3`; dense retrieval
   needs its own evaluation first)
-- Embeddings or re-ranking
+- Embeddings
 - Full agent framework
 - Production search SaaS
 - Multiple artifact variants unless size forces them

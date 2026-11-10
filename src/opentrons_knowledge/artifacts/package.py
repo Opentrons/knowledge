@@ -184,7 +184,7 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
                 "- [AGENTS.md](AGENTS.md): short agent entrypoint",
                 "- [docs/agent-usage.md](docs/agent-usage.md): full agent guide",
                 "- [docs/retrieval-tool.md](docs/retrieval-tool.md): "
-                "how to query when search is a tool",
+                "search_api, search_docs, and search_all",
                 "- [manifest.yaml](manifest.yaml): version, sources, schema, digest",
                 "",
                 "## Data",

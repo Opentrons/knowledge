@@ -14,7 +14,9 @@ The primary product is the corpus artifact, not a search SDK or lookup library.
 - [README.md](README.md): build, pack, CLI
 - [docs/product-architecture.md](docs/product-architecture.md): architecture
 - [docs/corpus-format.md](docs/corpus-format.md): artifact layout and schemas
-- [docs/retrieval-experiments.md](docs/retrieval-experiments.md): how the shipped chunking and BM25 index were chosen
+- [docs/retrieval-design.md](docs/retrieval-design.md): why the corpus ships two BM25 indexes
+- [docs/retrieval-experiments.md](docs/retrieval-experiments.md): how the shipped chunking and the merged ranking were chosen
+- [docs/retrieval-tool.md](docs/retrieval-tool.md): `search_api`, `search_docs`, and `search_all`
 - [docs/source-analysis.md](docs/source-analysis.md): source pins and docs layout
 - [docs/versioning.md](docs/versioning.md): version axes
 - [docs/release-process.md](docs/release-process.md): release and publish
@@ -31,5 +33,4 @@ After unpack/pull, agents should open:
 - `docs/agent-usage.md`
 - `manifest.yaml`
 - `corpus/*.jsonl.zst` (normalized records)
-- `retrieval/` when present (10.0.0-k3+): documents, chunks, `api/bm25/` for the Python API reference, `docs/bm25/` for everything else
-- [docs/retrieval-tool.md](docs/retrieval-tool.md): how to query each index when search is a tool
+- `retrieval/` when present (10.0.0-k3+): documents, chunks, `api/bm25/` for the Python API reference, `docs/bm25/` for everything else. Search them as three tools (`search_api`, `search_docs`, `search_all`); see [docs/retrieval-tool.md](docs/retrieval-tool.md)

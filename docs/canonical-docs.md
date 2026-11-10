@@ -204,43 +204,34 @@ byte-identical files.
 
 ## Chunking and indexing
 
-Do this in the consumer. These records are the units; this package does not
-chunk or embed them.
+`10.0.0-k3` chunks these records in `retrieval/`. Symbol sections are one chunk
+each, in `retrieval/api/bm25/`. Other sections use structured chunking in
+`retrieval/docs/bm25/`: each tab is its own chunk, other blocks pack at a
+boundary of 400 words, and a search hit returns every chunk of the matched
+section. See [retrieval-design.md](retrieval-design.md).
 
-Use one chunk per section. Section size on the `mkdocs-2026-09-30` pin is
-already in range for an embedding model: median about 500 characters, 99th
-percentile about 4,000, and four sections above 6,000. Split only those, and
-only if the model needs a lower cap.
+The rules that bundle follows:
 
-When building the chunk text:
-
-- Prefix with `heading_path` joined by ` > `, plus `url`. Add
-  `api.qualified_name` when the section has one. Parent titles are already on
-  `heading_path`, so a heading-only parent (56 of them) is context, not its own
-  chunk.
+- Prefix with `heading_path` joined by ` > `. Add `api.qualified_name` when the
+  section has one and the name is not already in the opening of the text.
+  Parent titles are already on `heading_path`, so a heading-only parent is
+  context, not its own chunk.
 - Keep each tab as its own chunk and put the tab label in the prefix. Tabs on
-  one page often describe different robots (Flex and OT-2). Concatenating them
-  mixes procedures that must not be retrieved together.
-- Keep a code block, including an API `signature`, in the chunk of its section.
-- Render tables from `rows` (cell `text`, plus `rowspan` and `colspan`). Cell
-  text is the whole cell; nested lists are already flattened into it.
+  one page often describe different robots (Flex and OT-2).
+- Keep a code block, including an API `signature`, with the section it belongs to.
 - Skip a document when `search_exclude` is true. That flag mirrors MkDocs
   `search.exclude`. On this pin it marks two unpublished Vacuum Module pages
-  whose body is placeholder text. The same flag is on each `manifest.json`
-  inventory entry, so an indexer can skip them without reading the JSONL.
-- Skip the two API sections that have a qualified name and no blocks
-  (`opentrons.types.Mount`, `opentrons.protocols.api_support.types.APIVersion`).
-  The rendered page is an empty class stub.
+  whose body is placeholder text.
+- The retrieval id is `doc:<page_path>#<anchor>`, from the page path and the
+  heading anchor, and the build fails if any id repeats.
 
-Key each chunk on `section_id`. That id is `section:` plus `document_id` (the
-Markdown path is in there) plus the heading anchor, and validation rejects a
-corpus where any section id or content hash is repeated. The same warranty text
-on the Flex page and the OT-2 page keeps two ids and two hashes, because both
-pages have to be retrievable. Use `content_hash` to skip re-embedding a section
-whose path and body are unchanged.
+Section size on the `mkdocs-2026-09-30` pin, for anyone adding embeddings
+later: median about 500 characters, 99th percentile about 4,000, and four
+sections above 6,000. No embeddings ship today. Use `content_hash` to skip
+re-embedding a section whose path and body are unchanged.
 
-Also index `project`, `nav_path`, `source.markdown_path`, `api.kind`, and
-`api.labels`. Cite `url` and `source.markdown_url`.
+Also useful as filters: `project`, `nav_path`, `source.markdown_path`,
+`api.kind`, and `api.labels`. Cite `url` and `source.markdown_url`.
 
 ## Consuming
 

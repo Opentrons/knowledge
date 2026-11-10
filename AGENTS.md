@@ -1,4 +1,4 @@
-# Opentrons Knowledge — Agent Entrypoint
+# Opentrons Knowledge: Agent Entrypoint
 
 You are working with **Opentrons Knowledge**, which publishes immutable
 **Opentrons Knowledge Corpus** artifacts for specific Opentrons software
@@ -21,19 +21,20 @@ The product is the **corpus artifact** (same bytes as a directory, shipped as
    - `ghcr.io/opentrons/opentrons-knowledge:<version>` via `opentrons-knowledge pull`
 2. Open the unpacked directory.
 3. Read `manifest.yaml`. Use `raw/` for verbatim pinned sources, or
-   `corpus/*.jsonl.zst` for normalized records. From `10.0.0-k3`, `retrieval/`
-   adds searchable documents, chunks, and two BM25 indexes: `retrieval/api/`
-   for the Python API reference and `retrieval/docs/` for everything else.
-   No embeddings are shipped.
+   `corpus/*.jsonl.zst` for normalized records. From `10.0.0-k3`, `canonical/`
+   holds the rendered docs and `retrieval/` adds searchable documents, chunks,
+   and two BM25 indexes: `retrieval/api/` for the Python API reference and
+   `retrieval/docs/` for everything else. No embeddings are shipped.
 
 ```bash
-opentrons-knowledge unpack opentrons-knowledge-9.1.1-k1.tar.zst --output dist
-# or: opentrons-knowledge pull 9.1.1-k1 --output dist
+opentrons-knowledge unpack opentrons-knowledge-10.0.0-k3.tar.zst --output dist
+# or: opentrons-knowledge pull 10.0.0-k3 --output dist
 ```
 
-The on-disk layout is the API. Downstream apps define ranking; the shipped BM25
-index and its evaluation (`reports/retrieval-eval.json`) are a measured starting
-point, not a service.
+The on-disk layout is the API. This package searches a local bundle
+(`search_api`, `search_docs`, and `search_all`, which merges the two rankings).
+It does not run a search service. Query shapes are in `docs/retrieval-tool.md`.
+The evaluation behind the docs index is `reports/retrieval-eval.json`.
 
 ## Authority order (highest first)
 
@@ -49,4 +50,4 @@ Examples and AI guides must not override symbols or shared-data.
 ## Cite sources
 
 Prefer commit-pinned `source_url` fields on records, plus the corpus version
-(`9.1.1-k1`). See `docs/agent-usage.md`.
+from `manifest.yaml` (currently `10.0.0-k3`). See `docs/agent-usage.md`.
