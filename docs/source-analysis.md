@@ -4,10 +4,12 @@ Findings from inspecting the local Opentrons monorepo at
 `/Users/joshmcvey/github/opentrons/opentrons` for the first corpus target
 `9.1.1-k1` (Opentrons release `v9.1.1`).
 
-Current pins are `corpora/10.0.0-k3/source-manifest.yaml` (`v10.0.0`,
-`mkdocs-2026-09-30`, `ai-server@0.0.22`). This page records why the `9.1.1-k1`
-docs pin is not the release commit. That reason still holds: the docs tag and
-the robot-software tag move on different schedules.
+Current pins are `corpora/10.0.0-k4/source-manifest.yaml` (`v10.0.0`,
+`mkdocs-2026-09-30`, `ai-server@0.0.22`, `protocol-designer@9.0.1`). This page
+records why the `9.1.1-k1` docs pin is not the release commit. That reason
+still holds: the docs tag and the robot-software tag move on different
+schedules. The Protocol Designer allowlist is pinned the same way as the
+ai-server tag: latest production tag, independent of `v10.0.0`.
 
 ## Summary
 
@@ -19,6 +21,7 @@ the robot-software tag move on different schedules.
 | Protocol API code | `api/src/opentrons/protocol_api/` |
 | Shared data | `shared-data/{labware,pipette,module,deck,robot,...}` |
 | Opentrons AI v1 guidance | Curated Markdown in `opentrons-ai-server/api/storage/docs/` (same monorepo) |
+| Protocol Designer allowlist | `protocol-designer/src/utils/labwareModuleCompatibility.ts` (raw only) |
 | Release tag | Annotated tag `v9.1.1` → commit `ad074b80e267084f08065b6d559b791140dfa671` |
 
 There is no separate public "Opentrons AI v1" repository on this machine. The
@@ -194,6 +197,28 @@ opentrons-ai-server/api/storage/docs/
 ```
 
 Exclude `pd/` always. Authority level: `curated_guidance`.
+
+## Protocol Designer module-labware allowlist
+
+Pinned on `10.0.0-k4` to the latest production `protocol-designer@X.Y.Z` tag,
+currently `protocol-designer@9.0.1` at
+`677274a40c5d22044c4efe7365d4904a56eeefd4`. This pin is independent of the
+robot-stack `v10.0.0` commit and of the docs and ai-server pins. Eligible tags
+are `protocol-designer@X.Y.Z` with no prerelease. `staging-protocol-designer@*`,
+`pd-test*`, and any `protocol-designer@*` tag containing `-alpha`, `-beta`, or
+`-rc` are ignored.
+
+```text
+protocol-designer/src/utils/labwareModuleCompatibility.ts
+  COMPATIBLE_LABWARE_ALLOWLIST_BY_MODULE_TYPE
+```
+
+The build copies that one file to
+`raw/protocol_designer/protocol-designer/src/utils/labwareModuleCompatibility.ts`
+and records the tag, commit, and path in `raw/manifest.yaml` and
+`corpus/source-files.jsonl.zst`. It does not parse the TypeScript, and it does
+not emit entities, relationships, retrieval documents, or search chunks from it.
+The rest of `protocol-designer/` is not copied.
 
 ## Duplicate-Content Risks
 

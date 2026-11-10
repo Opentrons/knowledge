@@ -18,6 +18,16 @@ from opentrons_knowledge.normalization.ids import (
 
 SKIP_DIR_NAMES = {"__pycache__", "js", "python", "python_tests", "tools", "images", "fixtures"}
 
+# Deck ids shared-data uses on module definitions, and the robot each deck belongs to.
+_MODULE_DECKS = {
+    "ot2_standard": "ot-2",
+    "ot2_short_trash": "ot-2",
+    "ot3_standard": "flex",
+}
+_OT2_SLOTS = frozenset(str(slot) for slot in range(1, 12))
+_FLEX_SLOTS = frozenset(f"{row}{column}" for row in "ABCD" for column in range(1, 5))
+_ROBOT_ORDER = ("flex", "ot-2")
+
 
 @dataclass
 class SharedDataBundle:
@@ -103,6 +113,54 @@ def ingest_shared_data(
     return bundle
 
 
+def labware_robot_scope(load_name: str) -> list[str]:
+    """Robots that can load this labware or tip rack.
+
+    ``opentrons_flex_*`` is Flex. Every other load name is both robots: a
+    labware definition has no robot field, and ``ProtocolContext.load_labware``
+    does not reject a load name for the other robot.
+    """
+    if load_name.startswith("opentrons_flex_"):
+        return ["flex"]
+    return list(_ROBOT_ORDER)
+
+
+def pipette_robot_scope(data: dict[str, Any], *, source_path: str = "") -> list[str]:
+    """Robot for a pipette general definition.
+
+    ``displayCategory`` ``FLEX`` is Flex. ``GEN1`` and ``GEN2`` are OT-2.
+    A 96-channel pipette is Flex even when ``displayCategory`` is ``GEN1``.
+    """
+    if data.get("channels") == 96 or "ninety_six_channel" in source_path:
+        return ["flex"]
+    category = data.get("displayCategory")
+    if not isinstance(category, str) or not category:
+        return []
+    if category.upper() == "FLEX":
+        return ["flex"]
+    return ["ot-2"]
+
+
+def module_robot_scope(data: dict[str, Any]) -> list[str]:
+    """Robots whose decks can accept this module.
+
+    Start from the shared-data decks absent from ``incompatibleWithDecks``.
+    When ``orientation`` names slots, keep a robot only if one of those slots
+    is its own (``1`` through ``11`` for OT-2, ``A1`` through ``D4`` for Flex).
+    """
+    incompatible = data.get("incompatibleWithDecks")
+    blocked = set(incompatible) if isinstance(incompatible, list) else set()
+    robots = {robot for deck, robot in _MODULE_DECKS.items() if deck not in blocked}
+    orientation = data.get("orientation")
+    if isinstance(orientation, dict) and orientation:
+        slots = {str(slot) for slot in orientation}
+        if not slots & _OT2_SLOTS:
+            robots.discard("ot-2")
+        if not slots & _FLEX_SLOTS:
+            robots.discard("flex")
+    return [robot for robot in _ROBOT_ORDER if robot in robots]
+
+
 def _entity_from_definition(
     data: dict[str, Any],
     *,
@@ -111,6 +169,10 @@ def _entity_from_definition(
     source_key: str,
 ) -> Entity | None:
     lower = source_path.lower()
+    # Schema documents are not loadable hardware. A path stem is always
+    # non-empty, so it must not be used as proof that a file is a definition.
+    if "/schemas/" in lower:
+        return None
     schema_version = str(data.get("schemaVersion") or data.get("schema_version") or "unknown")
 
     if "/labware/" in lower and ("parameters" in data or "wells" in data):
@@ -119,6 +181,9 @@ def _entity_from_definition(
             or data.get("namespace")
             or Path(source_path).stem
         )
+        # schema3test_* labware (definition version 999) are shared-data test fixtures.
+        if str(load_name).startswith("schema") or data.get("version") == 999:
+            return None
         display = data.get("metadata", {}).get("displayName") or load_name
         is_tiprack = bool(data.get("parameters", {}).get("isTiprack"))
         entity_type = EntityType.TIP_RACK if is_tiprack else EntityType.LABWARE
@@ -138,6 +203,7 @@ def _entity_from_definition(
                 "display_category": data.get("metadata", {}).get("displayCategory"),
             },
             version_scope=release_key,
+            robot_scope=labware_robot_scope(str(load_name)),
             content_hash=content_hash(json.dumps(data, sort_keys=True)),
             raw_source=data,
         )
@@ -165,17 +231,18 @@ def _entity_from_definition(
                 "model": Path(source_path).stem,
             },
             version_scope=release_key,
+            robot_scope=pipette_robot_scope(data, source_path=source_path),
             content_hash=content_hash(json.dumps(data, sort_keys=True)),
             raw_source=data,
         )
 
-    if "/module/" in lower and ("model" in data or "moduleType" in data or Path(source_path).stem):
-        model = data.get("model") or Path(source_path).stem
-        eid = entity_id(EntityType.MODULE.value, str(model), release_key)
+    if "/module/" in lower and isinstance(data.get("model"), str):
+        model = data["model"]
+        eid = entity_id(EntityType.MODULE.value, model, release_key)
         return Entity(
             entity_id=eid,
             entity_type=EntityType.MODULE,
-            canonical_name=str(model),
+            canonical_name=model,
             display_name=str(data.get("displayName") or model),
             source_ids=[f"{source_key}:{source_path}"],
             properties={
@@ -183,6 +250,7 @@ def _entity_from_definition(
                 "schema_version": schema_version,
             },
             version_scope=release_key,
+            robot_scope=module_robot_scope(data),
             content_hash=content_hash(json.dumps(data, sort_keys=True)),
             raw_source=data,
         )

@@ -22,6 +22,11 @@ from opentrons_knowledge.normalization.ids import content_hash, slugify
 from opentrons_knowledge.normalization.serialize import dumps_canonical_json, read_jsonl_zst
 from opentrons_knowledge.retrieval.models import RetrievalDocument, RetrievalKind, Segment
 from opentrons_knowledge.retrieval.render import render_blocks, section_segments
+from opentrons_knowledge.shared_data.entities import (
+    labware_robot_scope,
+    module_robot_scope,
+    pipette_robot_scope,
+)
 
 PROTOCOL_API_PREFIX = "opentrons.protocol_api."
 
@@ -443,6 +448,7 @@ def _labware_document(
         authority_level="normative",
         doc_type="labware_spec",
         load_name=load_name,
+        robot_types=labware_robot_scope(load_name),
         aliases=sorted({load_name, display, *brand_ids}),
         content_hash=_hash(retrieval_id, display, text),
     )
@@ -457,16 +463,18 @@ def _pipette_document(
         f"{major}.{minor}" for (major, minor), _e, _p in sorted(group, key=_first)
     )
     display = entity.display_name
-    robot = "flex" if display.startswith("Flex") else "ot-2"
-    text = "\n".join(
-        [
-            f"**{display}**",
-            f"- Channels: {entity.properties.get('channels')}",
-            f"- Volume class: {volume}",
-            f"- Model revisions: {revisions}",
-            f"- Robot: {'Opentrons Flex' if robot == 'flex' else 'OT-2'}",
-        ]
-    )
+    raw = entity.raw_source or {}
+    robot_types = pipette_robot_scope(raw, source_path=path)
+    robot_labels = {"flex": "Opentrons Flex", "ot-2": "OT-2"}
+    lines = [
+        f"**{display}**",
+        f"- Channels: {entity.properties.get('channels')}",
+        f"- Volume class: {volume}",
+        f"- Model revisions: {revisions}",
+    ]
+    if len(robot_types) == 1:
+        lines.append(f"- Robot: {robot_labels[robot_types[0]]}")
+    text = "\n".join(lines)
     retrieval_id = f"pipette:{key}"
     return RetrievalDocument(
         retrieval_id=retrieval_id,
@@ -480,7 +488,7 @@ def _pipette_document(
         source_record_ids=sorted(e.entity_id for _v, e, _p in group),
         authority_level="normative",
         doc_type="user_manual",
-        robot_types=[robot],
+        robot_types=robot_types,
         aliases=sorted({display, f"{volume}_{channels}"}),
         content_hash=_hash(retrieval_id, display, text),
     )
@@ -516,6 +524,7 @@ def _module_document(model: str, latest: tuple[tuple[int, int], Entity, str]) ->
         source_record_ids=[entity.entity_id],
         authority_level="normative",
         doc_type="module_guide",
+        robot_types=module_robot_scope(raw),
         aliases=sorted({model, display}),
         content_hash=_hash(retrieval_id, display, text),
     )
