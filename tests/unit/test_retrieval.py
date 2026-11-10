@@ -275,6 +275,64 @@ def test_entities_keep_the_latest_definition_and_drop_schema_files(
     (labware,) = build_retrieval_documents(inputs, [RetrievalKind.ENTITY])
     assert labware.title == "NEST 12 Well Reservoir 15 mL"
     assert labware.source_path.endswith("nest_12_reservoir_15ml/2.json")
+    assert labware.robot_types == ["flex", "ot-2"]
+
+
+def test_pipette_robot_comes_from_display_category_not_the_display_name() -> None:
+    """FLEX in displayCategory is Flex. A display-name prefix is not."""
+
+    def pipette(relative: str, display: str, category: str, channels: int) -> Entity:
+        path = f"pipette/definitions/2/general/{relative}"
+        return Entity(
+            entity_id=f"entity:pipette:{relative}:10.0.0",
+            entity_type=EntityType.PIPETTE,
+            canonical_name=relative,
+            display_name=display,
+            source_ids=[f"shared_data:shared-data/{path}"],
+            properties={"channels": channels},
+            content_hash="p",
+            raw_source={
+                "displayName": display,
+                "displayCategory": category,
+                "channels": channels,
+            },
+        )
+
+    docs = {
+        doc.retrieval_id: doc
+        for doc in build_retrieval_documents(
+            RetrievalInputs(
+                canonical_documents=[],
+                entities=[
+                    pipette(
+                        "eight_channel_em/p1000/3_1.json",
+                        "FLEX 8-Channel EM 1000 µL",
+                        "FLEX",
+                        8,
+                    ),
+                    pipette(
+                        "single_channel/p300/2_0.json",
+                        "Flex P300 Single-Channel",
+                        "GEN2",
+                        1,
+                    ),
+                    pipette(
+                        "ninety_six_channel/p1000/1_0.json",
+                        "P1000 96-Channel",
+                        "GEN1",
+                        96,
+                    ),
+                ],
+            ),
+            [RetrievalKind.ENTITY],
+        )
+    }
+    em = docs["pipette:eight_channel_em/p1000/v3"]
+    assert em.robot_types == ["flex"]
+    assert "- Robot: Opentrons Flex" in em.text
+    assert docs["pipette:single_channel/p300/v2"].robot_types == ["ot-2"]
+    assert "- Robot: OT-2" in docs["pipette:single_channel/p300/v2"].text
+    assert docs["pipette:ninety_six_channel/p1000/v1"].robot_types == ["flex"]
 
 
 def test_doc_types_follow_path_rules(inputs: RetrievalInputs) -> None:
