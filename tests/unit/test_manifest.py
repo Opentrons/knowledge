@@ -140,6 +140,35 @@ def test_load_real_1000_k2_manifest() -> None:
     assert manifest.sources["protocol_api"].commit.startswith("e8c6d0a4")
 
 
+_K3_SOURCES = {"opentrons_ai_v1", "opentrons_docs", "protocol_api", "shared_data"}
+
+
+def test_load_real_1000_k3_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k3" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "10.0.0-k3"
+    assert set(manifest.sources) == _K3_SOURCES
+    assert "protocol_designer" not in manifest.sources
+
+
+def test_load_real_1000_k4_manifest() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k4" / "source-manifest.yaml"
+    manifest = load_source_manifest(path)
+    assert manifest.corpus.version == "10.0.0-k4"
+    assert set(manifest.sources) == _K3_SOURCES | {"protocol_designer"}
+    source = manifest.sources["protocol_designer"]
+    assert source.repository == "https://github.com/Opentrons/opentrons"
+    assert source.tag == "protocol-designer@9.0.1"
+    assert source.commit == "677274a40c5d22044c4efe7365d4904a56eeefd4"
+    assert source.paths == ["protocol-designer/src/utils/labwareModuleCompatibility.ts"]
+    assert source.compatibility.status == CompatibilityStatus.VALIDATED
+    assert source.compatibility.target_release == "v10.0.0"
+    assert source.compatibility.relationship == "latest-protocol-designer-tag"
+    assert source.compatibility.validation_record == "compatibility/protocol-designer-v10.0.0.yaml"
+    record = path.parent / "compatibility" / "protocol-designer-v10.0.0.yaml"
+    assert record.is_file()
+
+
 def test_load_real_1000_k1_manifest() -> None:
     path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k1" / "source-manifest.yaml"
     manifest = load_source_manifest(path)

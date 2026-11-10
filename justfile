@@ -98,7 +98,14 @@ docs-inspect:
 # Retrieval (documents, chunks, HDE-native BM25 index)
 # -----------------------------------------------------------------------------
 
-retrieval_corpus := "dist/opentrons-knowledge-10.0.0-k3"
+retrieval_corpus := "dist/opentrons-knowledge-10.0.0-k4"
+
+# Build the 10.0.0-k4 corpus (k3 plus the Protocol Designer allowlist as a raw file)
+build-10-0-0-k4:
+    {{ python }} opentrons-knowledge build \
+        --manifest corpora/10.0.0-k4/source-manifest.yaml \
+        --opentrons-repo {{ opentrons_repo }} \
+        --output dist
 
 # Build the 10.0.0-k3 corpus (canonical docs + retrieval bundle + experiment report)
 build-10-0-0-k3:

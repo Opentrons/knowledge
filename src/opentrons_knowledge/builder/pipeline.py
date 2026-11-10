@@ -42,6 +42,7 @@ from opentrons_knowledge.models.manifest import (
     RenderedDocsConfig,
     ResolvedSource,
     RetrievalSettings,
+    SourceEntry,
     SourceManifest,
 )
 from opentrons_knowledge.models.records import (
@@ -54,6 +55,7 @@ from opentrons_knowledge.models.records import (
     Section,
     SourceFileRecord,
 )
+from opentrons_knowledge.normalization.ids import source_file_id
 from opentrons_knowledge.normalization.serialize import (
     file_sha256,
     load_yaml,
@@ -77,6 +79,26 @@ AUTHORITY_BY_SOURCE = {
     "opentrons_ai_v1": AuthorityLevel.CURATED_GUIDANCE,
     "curated": AuthorityLevel.CURATED_GUIDANCE,
 }
+
+
+def raw_only_source_files(key: str, source: ResolvedSource) -> list[SourceFileRecord]:
+    """Record configured paths as included source files without reading them.
+
+    ``protocol_designer`` is copied into ``raw/`` by ``copy_raw_sources``.
+    The TypeScript allowlist is not parsed into entities, relationships,
+    retrieval documents, or search chunks.
+    """
+    return [
+        SourceFileRecord(
+            source_file_id=source_file_id(key, path),
+            source_key=key,
+            repository=source.repository,
+            commit=source.commit,
+            path=path,
+            status="included",
+        )
+        for path in source.paths
+    ]
 
 
 @dataclass
@@ -180,6 +202,8 @@ def build_corpus(
             entities.extend(data_bundle.entities)
             relationships.extend(data_bundle.relationships)
             source_files.extend(data_bundle.source_files)
+        elif key == "protocol_designer":
+            source_files.extend(raw_only_source_files(key, source))
 
     graph = build_knowledge_graph(
         documents=documents,
@@ -338,16 +362,69 @@ def build_corpus(
     return BuildResult(corpus_root=corpus_root, manifest=corpus_manifest, duration_seconds=duration)
 
 
-def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
+def build_fixture_corpus(
+    output_dir: Path,
+    fixtures_root: Path,
+    *,
+    extra_sources: dict[str, SourceEntry] | None = None,
+) -> BuildResult:
     """Build a tiny deterministic corpus from in-repo fixtures (CI default)."""
     from opentrons_knowledge.models.manifest import (
         CompatibilityBlock,
         CorpusIdentity,
         ProcessingInfo,
         PublicationInfo,
-        SourceEntry,
     )
 
+    sources = {
+        "opentrons_docs": SourceEntry(
+            repository="https://github.com/Opentrons/opentrons",
+            commit="0" * 40,
+            paths=["docs/python-api/docs"],
+            local_path=str(fixtures_root),
+            compatibility=CompatibilityBlock(
+                status=CompatibilityStatus.EXACT_RELEASE,
+                target_release="v0.0.0",
+                relationship="fixture",
+            ),
+        ),
+        "protocol_api": SourceEntry(
+            repository="https://github.com/Opentrons/opentrons",
+            commit="0" * 40,
+            paths=["api/src/opentrons/protocol_api"],
+            local_path=str(fixtures_root),
+            compatibility=CompatibilityBlock(
+                status=CompatibilityStatus.EXACT_RELEASE,
+                target_release="v0.0.0",
+                relationship="fixture",
+            ),
+        ),
+        "shared_data": SourceEntry(
+            repository="https://github.com/Opentrons/opentrons",
+            commit="0" * 40,
+            paths=["shared-data/labware/definitions"],
+            local_path=str(fixtures_root),
+            compatibility=CompatibilityBlock(
+                status=CompatibilityStatus.EXACT_RELEASE,
+                target_release="v0.0.0",
+                relationship="fixture",
+            ),
+        ),
+        "opentrons_ai_v1": SourceEntry(
+            repository="https://github.com/Opentrons/opentrons",
+            commit="0" * 40,
+            paths=["opentrons-ai-server/api/storage/docs"],
+            exclude_paths=["opentrons-ai-server/api/storage/docs/pd"],
+            local_path=str(fixtures_root),
+            compatibility=CompatibilityBlock(
+                status=CompatibilityStatus.VALIDATED,
+                target_release="v0.0.0",
+                relationship="fixture",
+            ),
+        ),
+    }
+    if extra_sources:
+        sources.update(extra_sources)
     fixture_manifest = SourceManifest(
         corpus=CorpusIdentity(
             name=PRODUCT_NAME,
@@ -355,53 +432,7 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
             target_opentrons_release="v0.0.0",
             corpus_schema_version=CORPUS_SCHEMA_VERSION,
         ),
-        sources={
-            "opentrons_docs": SourceEntry(
-                repository="https://github.com/Opentrons/opentrons",
-                commit="0" * 40,
-                paths=["docs/python-api/docs"],
-                local_path=str(fixtures_root),
-                compatibility=CompatibilityBlock(
-                    status=CompatibilityStatus.EXACT_RELEASE,
-                    target_release="v0.0.0",
-                    relationship="fixture",
-                ),
-            ),
-            "protocol_api": SourceEntry(
-                repository="https://github.com/Opentrons/opentrons",
-                commit="0" * 40,
-                paths=["api/src/opentrons/protocol_api"],
-                local_path=str(fixtures_root),
-                compatibility=CompatibilityBlock(
-                    status=CompatibilityStatus.EXACT_RELEASE,
-                    target_release="v0.0.0",
-                    relationship="fixture",
-                ),
-            ),
-            "shared_data": SourceEntry(
-                repository="https://github.com/Opentrons/opentrons",
-                commit="0" * 40,
-                paths=["shared-data/labware/definitions"],
-                local_path=str(fixtures_root),
-                compatibility=CompatibilityBlock(
-                    status=CompatibilityStatus.EXACT_RELEASE,
-                    target_release="v0.0.0",
-                    relationship="fixture",
-                ),
-            ),
-            "opentrons_ai_v1": SourceEntry(
-                repository="https://github.com/Opentrons/opentrons",
-                commit="0" * 40,
-                paths=["opentrons-ai-server/api/storage/docs"],
-                exclude_paths=["opentrons-ai-server/api/storage/docs/pd"],
-                local_path=str(fixtures_root),
-                compatibility=CompatibilityBlock(
-                    status=CompatibilityStatus.VALIDATED,
-                    target_release="v0.0.0",
-                    relationship="fixture",
-                ),
-            ),
-        },
+        sources=sources,
         builder=BuilderInfo(name=BUILDER_NAME, version=__version__, commit="fixture"),
         processing=ProcessingInfo(),
         publication=PublicationInfo(),
@@ -418,8 +449,9 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
         if dest.exists():
             shutil.rmtree(dest)
         dest.mkdir(parents=True)
+        src_root = Path(entry.local_path) if entry.local_path else fixtures_root
         for rel in entry.paths:
-            src = fixtures_root / rel
+            src = src_root / rel
             target = dest / rel
             if src.is_dir():
                 shutil.copytree(src, target)
@@ -429,6 +461,7 @@ def build_fixture_corpus(output_dir: Path, fixtures_root: Path) -> BuildResult:
         materialized_sources[key] = ResolvedSource(
             key=key,
             repository=entry.repository,
+            tag=entry.tag,
             commit=entry.commit or "0" * 40,
             paths=list(entry.paths),
             exclude_paths=list(entry.exclude_paths),
@@ -526,6 +559,8 @@ def _build_from_materialized(
             entities.extend(data_bundle.entities)
             relationships.extend(data_bundle.relationships)
             source_files.extend(data_bundle.source_files)
+        elif key == "protocol_designer":
+            source_files.extend(raw_only_source_files(key, source))
 
     graph = build_knowledge_graph(
         documents=documents,

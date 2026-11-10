@@ -1,0 +1,17 @@
+source_key: protocol_designer
+target_release: v10.0.0
+status: validated
+relationship: latest-protocol-designer-tag
+validated_on: "2026-11-10"
+notes: >
+  Protocol Designer module-labware allowlist
+  (protocol-designer/src/utils/labwareModuleCompatibility.ts, exported constant
+  COMPATIBLE_LABWARE_ALLOWLIST_BY_MODULE_TYPE) from production tag
+  protocol-designer@9.0.1 (commit 677274a40c5d22044c4efe7365d4904a56eeefd4).
+  This pin tracks the latest production Protocol Designer tag and is
+  independent of the robot-stack v10.0.0 pin. Staging tags, pd-test tags, and
+  protocol-designer prereleases are not eligible. The file is copied verbatim
+  under raw/protocol_designer/ and is not parsed.
+known_gaps:
+  - Protocol Designer tag is independent of the robot-stack v10.0.0 pin
+  - The allowlist is not normalized into entities, relationships, or retrieval documents
