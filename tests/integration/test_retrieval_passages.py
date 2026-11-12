@@ -2,8 +2,8 @@
 
 The corpus is the highest version under ``corpora/``. These queries are ones
 where the winning chunk is only part of its section: the heading piece, or a
-later tab. The passage must still contain every chunk of that section. Skipped
-when that corpus has not been built.
+later tab. The passage must still contain every chunk of that section. A
+missing package fails.
 """
 
 from __future__ import annotations
@@ -24,11 +24,6 @@ from opentrons_knowledge.retrieval.passages import chunk_body, passages_for_hits
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = highest_corpus_version(ROOT / "corpora")
 BUNDLE = ROOT / "dist" / f"opentrons-knowledge-{VERSION}" / "retrieval"
-
-pytestmark = pytest.mark.skipif(
-    not (BUNDLE / "docs" / "bm25").is_dir(),
-    reason=f"build dist/opentrons-knowledge-{VERSION} to check full-section search results",
-)
 
 # (query, retrieval_id). Each query's top hit is this section, and that hit's
 # chunk is not the whole section.

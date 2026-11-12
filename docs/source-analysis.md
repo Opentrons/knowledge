@@ -288,7 +288,7 @@ labware already placed, step-form errors) are not tables and are not exported.
 
 The tables do not produce entities, relationships, retrieval documents, or
 chunks. `tests/integration/test_protocol_designer_tables.py` reads the built
-`dist/opentrons-knowledge-10.0.0-k5` package. It skips when that build is absent.
+`dist/opentrons-knowledge-10.0.0-k5` package. A missing build fails the test.
 
 ## Duplicate-Content Risks
 

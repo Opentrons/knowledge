@@ -207,7 +207,7 @@ See [docs/retrieval-design.md](docs/retrieval-design.md),
 ```bash
 just docs-build       # dist/canonical-docs/{documents.jsonl.zst,manifest.json}
 just docs-validate
-just test-integration # slow; real MkDocs build and HTML fidelity checks
+just test-integration # checks canonical/ in the latest built package
 ```
 
 See [docs/canonical-docs.md](docs/canonical-docs.md).
@@ -269,3 +269,57 @@ Copyright 2026 Opentrons Labworks, Inc.
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and
 [NOTICE](NOTICE).
+
+## Why the recent changes
+
+The corpus used to index the Markdown files authors edit, but much of what readers
+see is produced only when MkDocs builds the site: included tables, tabbed Flex
+and OT-2 procedures, and the Python API reference, generated from one-line stubs.
+The build also produces structure that is not in the source text at all: site
+navigation that places each page, breadcrumbs, links resolved to pages and
+anchors, and parent and child relationships among headings. Answering from the
+unbuilt files meant missing content, a flat heading structure, lost
+relationships, and records that shared an id.
+
+From `10.0.0-k3` on, we fully build the how-to docs and the API reference and
+parse that HTML into JSON documents with a stable id hierarchy: a page, its
+sections, and the parent and child links between them. The package ships those
+documents in `canonical/`, so a consumer can read the rendered pages directly.
+The indexes are a second set of JSON records derived from those documents, and
+any retrieval mechanism built against the indexes uses those records: one API
+section per public symbol, heading path and tab label on the docs side, and a
+build that fails if any id repeats.
+
+### TL;DR
+
+**The API reference lives only in the rendered page.** `reference/instruments.md`
+is front matter plus `::: opentrons.protocol_api.InstrumentContext`. Rendering
+that stub produces the class page: 325 symbol sections, each with a signature,
+parameters, returns, and version notes. Reading the file records the directive.
+The AST extract has the docstrings and misses the page readers actually see.
+
+**Generated docs and tabs collapse when the site is not built.** The liquid
+class page is three `{% include %}` lines. The rendered page has more than ten
+pipette and tip tables. Flex and OT-2 load names are tabs under one heading.
+The Markdown parse stored both tables as one unlabeled blob. The HTML extract
+keeps each tab, and the docs index prefixes the heading path (`Loading
+Pipettes > API load names > Flex Pipettes`).
+
+**Shared ids made two records one record.** The legacy section file has 1,470
+records and 1,372 ids, because a section id was a slug of the heading titles
+and a repeated title replaced the section before it. A property getter and its
+setter shared a symbol id (1,658 records, 1,615 ids), and every version of a
+labware load name shared one id (465 records, 261 ids). Ids are now the page
+path plus the HTML anchor. A repeated anchor gets a `-2` suffix, and a
+duplicate retrieval id fails the build.
+
+Those pages ship as the JSON documents in `canonical/`. The indexes read
+retrieval records built from them. The API index is one chunk per symbol, so a
+hit is the whole symbol section. The docs index gives each tab its own chunk
+and packs other blocks to 400 words on a block boundary, and a hit returns
+every chunk of that section. Fixed
+200-word windows scored 0.178 MRR worse. Curated MRR@10 is 0.601, up from
+0.501. Tests check the extract against the rendered HTML (code kept verbatim,
+structure counts matched, more than 99.5% of words kept), reject duplicate ids,
+and require a search hit to contain every chunk of the section: 25 docs
+sections and 25 API symbols on a built corpus.

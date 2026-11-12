@@ -2,8 +2,7 @@
 
 The corpus is the highest version under ``corpora/``. This reads that build.
 It does not rebuild the tables and it does not substitute example data. A
-missing file, a dropped key, or a changed value fails. Skipped when that
-corpus has not been built, or when it has no Protocol Designer tables.
+missing package, a dropped key, or a changed value fails.
 """
 
 from __future__ import annotations
@@ -12,8 +11,6 @@ import json
 import re
 from pathlib import Path
 from typing import Any
-
-import pytest
 
 from opentrons_knowledge.corpora import highest_corpus_version
 from opentrons_knowledge.normalization.serialize import load_yaml
@@ -24,11 +21,6 @@ VERSION = highest_corpus_version(ROOT / "corpora")
 CORPUS = ROOT / "dist" / f"opentrons-knowledge-{VERSION}"
 TABLES = CORPUS / "corpus" / "protocol-designer"
 RAW = CORPUS / "raw" / "protocol_designer"
-
-pytestmark = pytest.mark.skipif(
-    not (TABLES / "manifest.json").is_file(),
-    reason=f"build dist/opentrons-knowledge-{VERSION} to check the packaged tables",
-)
 
 _IDENTIFIER = re.compile(r"^[A-Z0-9_]+$|_TYPE$|_V\d+$")
 

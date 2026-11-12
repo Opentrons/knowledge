@@ -151,10 +151,9 @@ retrieval-audit:
 schemas:
     {{ python }} python scripts/write_canonical_schemas.py
 
-# Slow tests against a real Opentrons checkout (builds the pinned docs site)
+# Check the latest built package. Build it first; this does not render docs again.
 test-integration:
-    OPENTRONS_KNOWLEDGE_INTEGRATION=1 OPENTRONS_REPO={{ opentrons_repo }} \
-        {{ python }} pytest -q -m integration tests/integration
+    {{ python }} pytest -q tests/integration
 
 # -----------------------------------------------------------------------------
 # GitHub Actions (zizmor)

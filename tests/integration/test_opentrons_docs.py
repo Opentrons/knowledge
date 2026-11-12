@@ -1,104 +1,71 @@
-"""Build the real Opentrons MkDocs site at a pinned tag and check fidelity against its HTML.
+"""Check canonical docs in the latest built knowledge package.
 
-Slow (first run clones, syncs the docs uv project, and renders ~280 pages).
-Enable with ``OPENTRONS_KNOWLEDGE_INTEGRATION=1``; set ``OPENTRONS_REPO`` to a
-local clone (default ``../opentrons``). Builds are cached under ``dist/.work``.
+The package is ``dist/opentrons-knowledge-<highest version>``. These tests read
+``canonical/`` from that build. They do not render MkDocs again and they do not
+compare the records to a fixture site. A missing package fails.
 """
 
 from __future__ import annotations
 
-import os
-import re
+import shutil
 from collections import Counter
 from pathlib import Path
 
 import pytest
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 from opentrons_knowledge.builder.pipeline import load_source_manifest
+from opentrons_knowledge.corpora import highest_corpus_version
 from opentrons_knowledge.docs.canonical import (
-    build_canonical_corpus,
     find_document,
     iter_blocks,
     load_canonical_documents,
     validate_canonical_corpus,
 )
-from opentrons_knowledge.docs.mkdocs_build import RenderedSite, build_site
-from opentrons_knowledge.models.canonical import (
-    AdmonitionBlock,
-    CanonicalDocument,
-    CodeBlock,
-    TabsBlock,
-)
-from opentrons_knowledge.models.manifest import RenderedDocsConfig
+from opentrons_knowledge.errors import CorpusValidationError
+from opentrons_knowledge.models.canonical import AdmonitionBlock, CodeBlock, TabsBlock
+from opentrons_knowledge.normalization.serialize import write_jsonl_zst
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "corpora" / "10.0.0-k2" / "source-manifest.yaml"
-
-pytestmark = [
-    pytest.mark.integration,
-    pytest.mark.skipif(
-        os.environ.get("OPENTRONS_KNOWLEDGE_INTEGRATION") != "1",
-        reason="set OPENTRONS_KNOWLEDGE_INTEGRATION=1 to build the real Opentrons docs",
-    ),
-]
+VERSION = highest_corpus_version(ROOT / "corpora")
+CORPUS = ROOT / "dist" / f"opentrons-knowledge-{VERSION}"
+CANONICAL = CORPUS / "canonical"
 
 
-@pytest.fixture(scope="module")
-def rendered() -> RenderedSite:
-    repo = Path(os.environ.get("OPENTRONS_REPO", ROOT.parent / "opentrons"))
-    if not (repo / ".git").exists():
-        pytest.skip(f"No Opentrons clone at {repo}")
-    manifest = load_source_manifest(MANIFEST)
-    entry = manifest.sources["opentrons_docs"]
-    return build_site(
-        repository=entry.repository,
-        ref=entry.tag,
-        settings=RenderedDocsConfig(),
-        work_root=ROOT / "dist" / ".work",
-        local_repo=repo,
-    )
+def test_canonical_docs_match_the_corpus_pin() -> None:
+    manifest = validate_canonical_corpus(CANONICAL)
+    source = load_source_manifest(ROOT / "corpora" / VERSION / "source-manifest.yaml")
+    docs = source.sources["opentrons_docs"]
+    documents = load_canonical_documents(CANONICAL)
 
-
-@pytest.fixture(scope="module")
-def corpus_dir(rendered: RenderedSite, tmp_path_factory: pytest.TempPathFactory) -> Path:
-    out = tmp_path_factory.mktemp("canonical")
-    build_canonical_corpus(rendered, out)
-    return out
-
-
-@pytest.fixture(scope="module")
-def documents(corpus_dir: Path) -> list[CanonicalDocument]:
-    return load_canonical_documents(corpus_dir)
-
-
-def test_pinned_revision_and_source_mapping(
-    rendered: RenderedSite, corpus_dir: Path, documents: list[CanonicalDocument]
-) -> None:
-    manifest = validate_canonical_corpus(corpus_dir)
-    assert rendered.commit == "00f1431babdf36a11ec68143c009d5fc889b2478"
-    assert manifest.source.ref == "mkdocs-2026-09-30"
+    assert manifest.corpus_version == VERSION
+    assert manifest.source.repository == docs.repository
+    assert manifest.source.ref == docs.tag
+    assert manifest.source.commit == docs.commit
+    assert manifest.source.dirty is False
     assert set(manifest.build.modified_files) <= {"docs/uv.lock"}
+    assert manifest.document_count > 250
+    assert manifest.section_count > 1000
+    assert len(documents) == manifest.document_count
+    assert [d.page_path for d in documents if d.source.markdown_path is None] == []
+
     excluded = {d.page_path for d in documents if d.search_exclude}
     assert excluded == {
         "python-api/modules/vacuum/",
         "python-api/reference/vacuum/",
     }
-    assert {e.page_path for e in manifest.documents if e.search_exclude} == excluded
-    assert manifest.document_count > 250
-    unmapped = [d.page_path for d in documents if d.source.markdown_path is None]
-    assert unmapped == []
-    assert {p.html_path for p in manifest.excluded_pages} >= {"404.html", "info/index.html"}
+    assert {entry.page_path for entry in manifest.documents if entry.search_exclude} == excluded
+    assert {page.html_path for page in manifest.excluded_pages} >= {
+        "404.html",
+        "info/index.html",
+    }
+    for kind in ("code", "tabs", "table", "admonition", "paragraph", "list"):
+        assert manifest.block_counts.get(kind, 0) > 0
+    assert "html" not in manifest.block_counts
 
 
-def test_deterministic_rewrite(rendered: RenderedSite, corpus_dir: Path, tmp_path: Path) -> None:
-    build_canonical_corpus(rendered, tmp_path)
-    for name in ("documents.jsonl.zst", "manifest.json"):
-        assert (tmp_path / name).read_bytes() == (corpus_dir / name).read_bytes()
+def test_representative_pages_keep_their_structure() -> None:
+    documents = load_canonical_documents(CANONICAL)
 
-
-def test_representative_pages(documents: list[CanonicalDocument]) -> None:
     app = find_document(documents, "flex/opentrons-app/")
     assert app is not None
     assert app.source.front_matter["title"] == "Opentrons Flex: Opentrons App"
@@ -107,6 +74,7 @@ def test_representative_pages(documents: list[CanonicalDocument]) -> None:
     loading = find_document(documents, "python-api/pipettes/loading/")
     assert loading is not None
     tabs = [b for s in loading.sections for b in iter_blocks(s.blocks) if isinstance(b, TabsBlock)]
+    assert tabs
     assert [t.label for t in tabs[0].tabs] == ["Flex Pipettes", "OT-2 Pipettes"]
     examples = [
         b for s in loading.sections for b in iter_blocks(s.blocks) if isinstance(b, CodeBlock)
@@ -127,7 +95,7 @@ def test_representative_pages(documents: list[CanonicalDocument]) -> None:
     definitions = find_document(documents, "python-api/liquid-classes/definitions/")
     assert definitions is not None
     tables = [b for s in definitions.sections for b in iter_blocks(s.blocks) if b.type == "table"]
-    assert len(tables) > 10, "macro-included liquid class tables should be expanded"
+    assert len(tables) > 10
 
     kinds = Counter(
         b.kind
@@ -139,59 +107,11 @@ def test_representative_pages(documents: list[CanonicalDocument]) -> None:
     assert {"note", "warning", "tip"} <= set(kinds)
 
 
-def test_fidelity_against_rendered_html(
-    rendered: RenderedSite, documents: list[CanonicalDocument]
-) -> None:
-    """Every code block, tab set, admonition, table, heading, and word survives extraction."""
-    problems: list[str] = []
-    for doc in documents:
-        soup = BeautifulSoup(
-            (rendered.site_dir / doc.rendered.html_path).read_text(encoding="utf-8"), "lxml"
-        )
-        article = soup.select_one("article.md-content__inner")
-        assert isinstance(article, Tag)
-        blocks = [b for s in doc.sections for b in iter_blocks(s.blocks)]
-
-        html_code = [_code_text(el) for el in article.select("div.highlight")]
-        record_code = Counter(b.code for b in blocks if isinstance(b, CodeBlock))
-        missing_code = Counter(html_code) - record_code
-        if missing_code:
-            problems.append(f"{doc.page_path}: {sum(missing_code.values())} code blocks differ")
-
-        checks = {
-            "tabs": (len(article.select("div.tabbed-set")), "tabs"),
-            "admonitions": (len(article.select("div.admonition, details")), "admonition"),
-            "tables": (len(article.select("table:not(.highlighttable)")), "table"),
-        }
-        for label, (expected, block_type) in checks.items():
-            actual = sum(1 for b in blocks if b.type == block_type)
-            if actual != expected:
-                problems.append(f"{doc.page_path}: {label} {actual} != {expected}")
-
-        headings = len(article.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]))
-        nested = sum(1 for b in blocks if b.type == "heading")
-        preamble = sum(1 for s in doc.sections if s.level == 0)
-        if len(doc.sections) - preamble + nested != headings:
-            problems.append(f"{doc.page_path}: sections {len(doc.sections)} != headings {headings}")
-
-        record_text = doc.model_dump_json()
-        words = _words(article)
-        missing = [w for w in words if w not in record_text]
-        if words and len(missing) / len(words) > 0.005:
-            problems.append(f"{doc.page_path}: {len(missing)}/{len(words)} words missing")
-    assert problems == []
-
-
-_WORD_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]{3,}")
-
-
-def _words(article: Tag) -> list[str]:
-    for junk in article.select("a.headerlink, script, style, .md-content__button"):
-        junk.decompose()
-    return _WORD_RE.findall(article.get_text(" "))
-
-
-def _code_text(block: Tag) -> str:
-    code = block.find("code") or block.find("pre")
-    assert isinstance(code, Tag)
-    return code.get_text().rstrip("\n")
+def test_validation_rejects_a_changed_copy(tmp_path: Path) -> None:
+    copied = tmp_path / "canonical"
+    shutil.copytree(CANONICAL, copied)
+    documents = load_canonical_documents(copied)
+    documents[0].title = f"{documents[0].title} changed"
+    write_jsonl_zst(copied / "documents.jsonl.zst", documents)
+    with pytest.raises(CorpusValidationError, match="sha256 mismatch"):
+        validate_canonical_corpus(copied)

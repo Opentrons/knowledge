@@ -26,7 +26,6 @@ from opentrons_knowledge.normalization.serialize import (
     read_jsonl_zst,
     write_yaml,
 )
-from opentrons_knowledge.retrieval.bundle import validate_bundle
 from opentrons_knowledge.sources.resolve import MaterializedSources
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mini_sources"
@@ -46,10 +45,8 @@ def test_fixture_corpus_build_and_validate(tmp_path: Path) -> None:
     assert (result.corpus_root / "raw" / "manifest.yaml").exists()
     assert (result.corpus_root / "raw" / "protocol_api").is_dir()
     assert manifest.record_counts.get("raw_files", 0) >= 1
-    assert (
-        manifest.record_counts["retrieval_chunks"] >= manifest.record_counts["retrieval_documents"]
-    )
-    assert validate_bundle(result.corpus_root / "retrieval") == []
+    assert not (result.corpus_root / "canonical").exists()
+    assert not (result.corpus_root / "retrieval").exists()
     assert "tar.zst" in (result.corpus_root / "AGENTS.md").read_text(encoding="utf-8")
 
     corpus = Corpus.open(result.corpus_root)
@@ -86,8 +83,6 @@ def test_fixture_corpus_deterministic(tmp_path: Path) -> None:
         "source-files.jsonl.zst",
     ]:
         assert file_sha256(first / "corpus" / name) == file_sha256(second / "corpus" / name)
-    for name in ["documents.jsonl.zst", "chunks.jsonl.zst", "queries.jsonl.zst"]:
-        assert file_sha256(first / "retrieval" / name) == file_sha256(second / "retrieval" / name)
 
 
 def test_diff_identical_corpora(tmp_path: Path) -> None:
@@ -169,8 +164,9 @@ def test_protocol_designer_is_raw_only(tmp_path: Path) -> None:
     assert matches[0]["content_hash"] is None
     assert matches[0]["byte_size"] is None
 
-    for field in ("entities", "relationships", "retrieval_documents", "retrieval_chunks"):
+    for field in ("entities", "relationships"):
         assert built.manifest.record_counts[field] == baseline.manifest.record_counts[field]
+    assert "retrieval_documents" not in built.manifest.record_counts
 
 
 def test_build_corpus_records_protocol_designer_without_parsing(

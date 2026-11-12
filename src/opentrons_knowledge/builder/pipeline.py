@@ -31,7 +31,7 @@ from opentrons_knowledge.docs.canonical import (
     load_canonical_documents,
 )
 from opentrons_knowledge.docs.markdown import ingest_docs_tree
-from opentrons_knowledge.docs.mkdocs_build import RenderedSite, build_site, prebuilt_site
+from opentrons_knowledge.docs.mkdocs_build import RenderedSite, build_site
 from opentrons_knowledge.errors import SourceResolutionError
 from opentrons_knowledge.models.canonical import CanonicalManifest
 from opentrons_knowledge.models.enums import AuthorityLevel, CompatibilityStatus
@@ -39,7 +39,6 @@ from opentrons_knowledge.models.manifest import (
     BuilderInfo,
     CorpusManifest,
     EnvironmentInfo,
-    RenderedDocsConfig,
     ResolvedSource,
     RetrievalSettings,
     SourceEntry,
@@ -480,28 +479,12 @@ def build_fixture_corpus(
             materialize_root=str(dest),
         )
 
-    rendered_fixture = fixtures_root.parent / "rendered_site"
-    rendered_site = (
-        prebuilt_site(
-            site_dir=rendered_fixture / "site",
-            checkout=rendered_fixture / "checkout",
-            repository="https://github.com/Opentrons/opentrons",
-            settings=RenderedDocsConfig(),
-            commit="0" * 40,
-        )
-        if (rendered_fixture / "site").is_dir()
-        else None
-    )
-
-    # Temporarily monkey-patch resolve by writing a one-off build using materialized map
     return _build_from_materialized(
         fixture_manifest,
         MaterializedSources(sources=materialized_sources, work_root=work),
         output_dir=output_dir,
         schemas_dir=Path(__file__).resolve().parents[3] / "schemas",
         compatibility_dir=None,
-        rendered_site=rendered_site,
-        retrieval=RetrievalSettings(queries=None, run_experiments=False),
     )
 
 
@@ -512,8 +495,6 @@ def _build_from_materialized(
     output_dir: Path,
     schemas_dir: Path,
     compatibility_dir: Path | None,
-    rendered_site: RenderedSite | None = None,
-    retrieval: RetrievalSettings | None = None,
 ) -> BuildResult:
     started = time.perf_counter()
     compat_report = validate_compatibility(
@@ -607,26 +588,6 @@ def _build_from_materialized(
             corpus_root / "corpus" / "source-files.jsonl.zst", source_files
         ),
     }
-    canonical_metadata: dict[str, object] = {}
-    if rendered_site is not None:
-        canonical = build_canonical_corpus(
-            rendered_site, corpus_root / CANONICAL_DIR, corpus_version=version
-        )
-        counts["canonical_documents"] = canonical.document_count
-        canonical_metadata = _canonical_metadata(canonical)
-        if retrieval is not None:
-            built, retrieval_metadata = _build_retrieval(
-                retrieval,
-                corpus_root,
-                version=version,
-                documents=documents,
-                sections=sections,
-                symbols=symbols,
-                entities=entities,
-            )
-            counts["retrieval_documents"] = built.manifest.document_count
-            counts["retrieval_chunks"] = built.manifest.chunk_count
-            canonical_metadata.update(retrieval_metadata)
     repo_root = Path(__file__).resolve().parents[3]
     copy_schemas(schemas_dir, corpus_root / "schemas")
     copy_agent_guides(repo_root, corpus_root)
@@ -668,7 +629,7 @@ def _build_from_materialized(
             build_timestamp="1970-01-01T00:00:00+00:00",
         ),
         record_counts=counts,
-        metadata={"raw_file_counts": raw_counts, **canonical_metadata},
+        metadata={"raw_file_counts": raw_counts},
     )
     write_manifest(corpus_root, corpus_manifest)
     finalize_checksums(corpus_root)

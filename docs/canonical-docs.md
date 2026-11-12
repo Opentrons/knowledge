@@ -25,7 +25,7 @@ Opentrons repository, its MkDocs config, or its deploy workflow is changed.
 just docs-build      # render mkdocs-2026-09-30 and write dist/canonical-docs
 just docs-validate   # checksums, inventory, section graph, content hashes
 DOC=python-api/pipettes/loading/ just docs-inspect
-just test-integration  # slow: real build + HTML fidelity checks
+just test-integration  # checks canonical/ in the latest built package
 ```
 
 Direct CLI:
@@ -254,14 +254,16 @@ and validate against the schemas.
 
 ## Validation
 
-- Unit tests run against a checked-in rendered fixture
-  (`tests/fixtures/rendered_site`) and a fake git repository for the build
-  runner.
-- `just test-integration` builds the real pinned site and checks every page
-  against its HTML: every highlighted code block is preserved verbatim; tab
-  sets, admonitions, tables, and headings match in count; and more than 99.5%
-  of words survive. It also checks pipette tabs, `InstrumentContext.aspirate`
-  signatures, macro-generated liquid class tables, and deterministic rewrites.
+`tests/integration/test_opentrons_docs.py` reads `canonical/` from the latest
+built package (`dist/opentrons-knowledge-<version>`, the highest version under
+`corpora/`). It checks the docs pin, that every page maps to Markdown, that
+unpublished pages stay out of search, and that major page structures are still
+there: pipette tabs, the `InstrumentContext.aspirate` signature, liquid-class
+tables, and note, warning, and tip callouts. It does not rebuild MkDocs or
+compare records to a fixture site. A missing package fails the test.
+
+`just test` runs that check with the rest of the suite. `just test-integration`
+runs only the package checks. Build the corpus first.
 
 At `mkdocs-2026-09-30`: 276 documents, all mapped to Markdown, 1809 sections,
 no `html` fallback blocks, and no unresolved icons.
