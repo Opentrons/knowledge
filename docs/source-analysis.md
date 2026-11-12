@@ -4,7 +4,7 @@ Findings from inspecting the local Opentrons monorepo at
 `/Users/joshmcvey/github/opentrons/opentrons` for the first corpus target
 `9.1.1-k1` (Opentrons release `v9.1.1`).
 
-Current pins are `corpora/10.0.0-k4/source-manifest.yaml` (`v10.0.0`,
+Current pins are `corpora/10.0.0-k5/source-manifest.yaml` (`v10.0.0`,
 `mkdocs-2026-09-30`, `ai-server@0.0.22`, `protocol-designer@9.0.1`). This page
 records why the `9.1.1-k1` docs pin is not the release commit. That reason
 still holds: the docs tag and the robot-software tag move on different
@@ -21,7 +21,7 @@ ai-server tag: latest production tag, independent of `v10.0.0`.
 | Protocol API code | `api/src/opentrons/protocol_api/` |
 | Shared data | `shared-data/{labware,pipette,module,deck,robot,...}` |
 | Opentrons AI v1 guidance | Curated Markdown in `opentrons-ai-server/api/storage/docs/` (same monorepo) |
-| Protocol Designer allowlist | `protocol-designer/src/utils/labwareModuleCompatibility.ts` (raw only) |
+| Protocol Designer tables | Raw compatibility sources plus evaluated JSON in `corpus/protocol-designer/` (`10.0.0-k5`) |
 | Release tag | Annotated tag `v9.1.1` → commit `ad074b80e267084f08065b6d559b791140dfa671` |
 
 There is no separate public "Opentrons AI v1" repository on this machine. The
@@ -198,9 +198,9 @@ opentrons-ai-server/api/storage/docs/
 
 Exclude `pd/` always. Authority level: `curated_guidance`.
 
-## Protocol Designer module-labware allowlist
+## Protocol Designer compatibility tables
 
-Pinned on `10.0.0-k4` to the latest production `protocol-designer@X.Y.Z` tag,
+Pinned since `10.0.0-k4` to the latest production `protocol-designer@X.Y.Z` tag,
 currently `protocol-designer@9.0.1` at
 `677274a40c5d22044c4efe7365d4904a56eeefd4`. This pin is independent of the
 robot-stack `v10.0.0` commit and of the docs and ai-server pins. Eligible tags
@@ -208,17 +208,87 @@ are `protocol-designer@X.Y.Z` with no prerelease. `staging-protocol-designer@*`,
 `pd-test*`, and any `protocol-designer@*` tag containing `-alpha`, `-beta`, or
 `-rc` are ignored.
 
+`10.0.0-k4` copied one file, `labwareModuleCompatibility.ts`. `10.0.0-k5` copies
+every Protocol Designer module the tables are evaluated from:
+
 ```text
+protocol-designer/src/constants.ts
+protocol-designer/src/modules/moduleData.ts
+protocol-designer/src/pages/Designer/DeckSetup/constants.ts
+protocol-designer/src/pages/Designer/DeckSetup/utils.ts
+protocol-designer/src/pages/Onboarding/constants.ts
 protocol-designer/src/utils/labwareModuleCompatibility.ts
-  COMPATIBLE_LABWARE_ALLOWLIST_BY_MODULE_TYPE
 ```
 
-The build copies that one file to
-`raw/protocol_designer/protocol-designer/src/utils/labwareModuleCompatibility.ts`
-and records the tag, commit, and path in `raw/manifest.yaml` and
-`corpus/source-files.jsonl.zst`. It does not parse the TypeScript, and it does
-not emit entities, relationships, retrieval documents, or search chunks from it.
-The rest of `protocol-designer/` is not copied.
+Those files land under `raw/protocol_designer/` at the same paths. `raw/manifest.yaml`
+and `corpus/source-files.jsonl.zst` record the tag, commit, and each path. The
+build does not parse the TypeScript, and it does not emit entities,
+relationships, retrieval documents, or search chunks from it. The rest of
+`protocol-designer/` is not copied into `raw/`. Step-generation is checked out
+only so `DeckSetup/utils.ts` can be imported; it is not a corpus source.
+
+### Evaluated tables (`10.0.0-k5` and later)
+
+The raw file alone is not consumable: the Flex Stacker entry is
+`...RECOMMENDED_LABWARE_BY_MODULE[FLEX_STACKER_MODULE_TYPE]`, so its load names
+are not in the text. From k5, `protocol_designer_tables` in the source manifest
+evaluates the tables instead of reading the source text.
+
+`tools/protocol-designer-export` is a small Node package (locked with
+`package-lock.json`; the build runs `npm ci` when `node_modules/` is missing).
+It requires Node.js >= 24.22.1, the version pinned by Opentrons `edge`
+(`.nvmrc` and `package.json` `engines`). The publish and corpus-build workflows
+install `24.22.1`.
+The build checks out `ProtocolDesignerTablesConfig.sparse_paths` at the
+`protocol_designer` commit, links the exporter's `node_modules/` into that
+checkout, and runs `run.mjs`. `run.mjs` imports `export.ts` through Vite's
+`runnerImport`, which is the bundler Protocol Designer ships with. That gives
+the modules the same `import.meta.glob` and alias behavior they have in the
+app:
+
+- Aliases come from `protocol-designer/tsconfig.json` `paths`
+  (`/protocol-designer/*` to `./src/*`), plus `@opentrons/shared-data` to
+  `shared-data/js/index.ts`, as in `protocol-designer/vite.config.mts`. tsx was
+  rejected because it does not map specifiers that start with `/`, and
+  shared-data calls `import.meta.glob` at module load.
+- `@opentrons/step-generation` resolves to `step-generation/src/index.ts`.
+  `DeckSetup/utils.ts` imports it. `@opentrons/components` resolves to
+  `stubs/opentrons-components.ts`. `DeckSetup/constants.ts` imports it only to
+  build `DECK_CONTROLS_STYLE`.
+- Predicates run against the pinned shared-data labware definitions. The filter
+  is `namespace === "opentrons"`, keeping the newest `schemaVersion` and then
+  the newest `version` per load name, and skipping `schema3test_*`. A name that
+  Protocol Designer lists but that is not in that shared-data pin is absent
+  from the predicate results. At `v10.0.0` that includes the vacuum collars.
+
+| File | Contents |
+|------|----------|
+| `labware-allowlist.json` | `by_module_type`: `COMPATIBLE_LABWARE_ALLOWLIST_BY_MODULE_TYPE`, Flex Stacker spread resolved |
+| `labware-compatible.json` | `by_module_type` from `getLabwareCompatibleWithModule`; `by_adapter` from `getLabwareCompatibleWithAdapter`; `adapter_96_channel` |
+| `recommended-labware.json` | `by_module_type` from `RECOMMENDED_LABWARE_BY_MODULE`; `by_module_model` from `getLabwareIsRecommended`, plus the vacuum-module and vacuum-dock cases |
+| `module-models.json` | Flex and OT-2 model lists (deck setup and onboarding), supported module types, multiple-of-a-model lists, deck fixtures |
+| `module-slots.json` | OT-2 supported slots, every OT-2 module slot, `getAllModuleSlotsByTypeOt2`, `getModuleModelsBySlot` for Flex and OT-2 slots (including empty staging slots), default slots |
+| `module-limits.json` | `MIN_*` and `MAX_*` module bounds, including profile volume, plus `MAX_MOAM_MODULES` and `MAX_MAGNETIC_BLOCKS` |
+| `pipette-options.json` | `PIPETTE_GENS`, `PIPETTE_TYPES`, `PIPETTE_VOLUMES` |
+| `manifest.json` | File list, Protocol Designer pin, shared-data pin |
+
+Each table file has a `source` object with `repository`, `tag`, `commit`, and
+`exports` (module path and export name). Keys are the runtime strings (for
+example `temperatureModuleType` or `heaterShakerModuleV1`), never TypeScript
+identifiers. Keys are sorted, and so are load-name arrays and the model-list
+fields. `models_by_slot` and `slots_by_module_type_ot2` keep Protocol
+Designer's order. Slot options keep `value` and keep the dropdown `name` only
+when it differs (OT-2 thermocycler: `7` shown as `7,8,10,11`).
+`vacuumModuleTypeWithLabware` is a Protocol Designer-only key and stays
+separate from `vacuumModuleType`. Robot keys are the runtime strings
+`OT-3 Standard` and `OT-2 Standard`.
+
+Functions that need the protocol currently on the deck (collision checks,
+labware already placed, step-form errors) are not tables and are not exported.
+
+The tables do not produce entities, relationships, retrieval documents, or
+chunks. `tests/integration/test_protocol_designer_tables.py` reads the built
+`dist/opentrons-knowledge-10.0.0-k5` package. It skips when that build is absent.
 
 ## Duplicate-Content Risks
 

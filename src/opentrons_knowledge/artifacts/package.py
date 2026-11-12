@@ -20,6 +20,7 @@ from opentrons_knowledge.normalization.serialize import (
     write_json,
     write_yaml,
 )
+from opentrons_knowledge.protocol_designer.tables import TABLES_DIR, validate_tables
 from opentrons_knowledge.retrieval.bundle import RETRIEVAL_DIR, validate_bundle
 
 CORPUS_FILES = (
@@ -104,6 +105,10 @@ def validate_corpus_dir(corpus_root: Path) -> CorpusManifest:
         problems = validate_bundle(corpus_root / RETRIEVAL_DIR)
         if problems:
             raise CorpusValidationError(f"Invalid {RETRIEVAL_DIR}/: {'; '.join(problems)}")
+    if (corpus_root / TABLES_DIR).exists():
+        problems = validate_tables(corpus_root / TABLES_DIR)
+        if problems:
+            raise CorpusValidationError(f"Invalid {TABLES_DIR}/: {'; '.join(problems)}")
 
     expected = read_checksums(checksums_path)
     actual = compute_checksums(corpus_root)
@@ -184,7 +189,7 @@ def copy_agent_guides(repo_root: Path, corpus_root: Path) -> None:
                 "- [AGENTS.md](AGENTS.md): short agent entrypoint",
                 "- [docs/agent-usage.md](docs/agent-usage.md): full agent guide",
                 "- [docs/retrieval-tool.md](docs/retrieval-tool.md): "
-                "search_api, search_docs, and search_all",
+                "the two agent tools, search_api and search_docs",
                 "- [manifest.yaml](manifest.yaml): version, sources, schema, digest",
                 "",
                 "## Data",

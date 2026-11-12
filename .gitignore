@@ -4,6 +4,8 @@
 venv/
 env/
 
+node_modules/
+
 # Byte-compiled / caches
 __pycache__/
 *.py[cod]

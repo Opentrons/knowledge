@@ -1,7 +1,9 @@
 # Retrieval Experiments: What We Tried and Why We Ship What We Ship
 
-Corpus: `10.0.0-k3` (docs `mkdocs-2026-09-30` @ `00f1431b`, Protocol API and
-shared-data `v10.0.0` @ `e8c6d0a4`, AI guides `ai-server@0.0.22`).
+Measured on `10.0.0-k3` (docs `mkdocs-2026-09-30` @ `00f1431b`, Protocol API and
+shared-data `v10.0.0` @ `e8c6d0a4`, AI guides `ai-server@0.0.22`). The current
+corpus is `10.0.0-k5`; its retrieval bundle uses this configuration and the
+same document and chunk counts.
 Report: `reports/retrieval-eval.json` in the corpus. Re-run with
 `just retrieval-experiment`. The design is in
 [retrieval-design.md](retrieval-design.md).
@@ -178,45 +180,8 @@ For example, `python-api/examples/` ranks above the pipette-loading section for
 "load a pipette on the left mount", because every example repeats
 `load_instrument`.
 
-These misses are the target set for the next experiment: adding a dense index
-with RRF, measured on this same evaluation set.
-
-## Merging the two indexes
-
-A single search over both indexes needs one ranking. Each index scores with its
-own BM25 statistics, so the scores are not comparable. The merge uses only
-positions: reciprocal rank fusion, `sum(weight / (60 + rank))` over the lists
-where a section appears.
-
-Two measured choices:
-
-- **Weight.** The API list gets full weight for a query that names a symbol: a
-  single token that matches the API `symbol` field (`InstrumentContext.blow_out`,
-  `blow_out`). Every other query gives the API list weight 0.5, so the docs
-  list keeps the top place and API sections fill in below it. The sweep was flat
-  across 0.1 to 0.5, and at weight 1.0 the merged list lost the docs ranking
-  (curated MRR 0.369 against 0.619 for docs alone).
-- **Tie.** The list with the higher weight ranks first on a tie. Without this, a
-  symbol name could lose to a docs page that ranked first on the docs index.
-
-Results on the 10.0.0-k3 bundle, 345 queries (105 curated, 240 structural),
-ranked at section level:
-
-| System | curated MRR@10 | curated Hit@5 | structural MRR@10 | structural Hit@10 |
-|---|---|---|---|---|
-| API index only | 0.109 | 0.143 | 0.164 | 0.333 |
-| Docs index only | 0.619 | 0.829 | 0.561 | 0.646 |
-| Previous `all` (API hits, then docs hits) | 0.217 | 0.419 | 0.270 | 0.583 |
-| Merged (shipped rule) | 0.619 | 0.829 | 0.593 | 0.725 |
-
-On the 325 documented symbols, asked by name, the merged list puts the symbol's
-own section first in all 325 cases (the audit is 325 of 325 on the API index alone).
-
-The merge does not improve curated questions, because the docs index already
-ranks them well and the API index adds mostly noise on plain-language
-questions. Its gain is on structural questions, where the API section is the
-right second result. Scores in the merged list are fused scores (about
-0.016 for a first place), not BM25 scores, so compare them within one query only.
+These misses are the target set for the next experiment: adding a dense index,
+measured on this same evaluation set.
 
 ## Reproduce
 

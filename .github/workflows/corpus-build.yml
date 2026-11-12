@@ -41,6 +41,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.22.1"
+          package-manager-cache: false
+
       - name: Sync dependencies
         run: uv sync --all-extras --frozen
 
@@ -59,6 +65,7 @@ jobs:
           CORPUS_DIR=$(find dist -maxdepth 1 -type d -name 'opentrons-knowledge-*' | head -1)
           uv run opentrons-knowledge validate --corpus "$CORPUS_DIR"
           uv run opentrons-knowledge inspect --corpus "$CORPUS_DIR"
+          uv run pytest -q tests/integration/test_protocol_designer_tables.py
 
       - name: Pack corpus tar.zst
         run: |

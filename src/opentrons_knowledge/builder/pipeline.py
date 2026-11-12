@@ -61,6 +61,7 @@ from opentrons_knowledge.normalization.serialize import (
     load_yaml,
     write_jsonl_zst,
 )
+from opentrons_knowledge.protocol_designer.tables import TABLES_DIR, evaluate_tables, write_tables
 from opentrons_knowledge.python_api.ast_symbols import ingest_protocol_api
 from opentrons_knowledge.relationships.build import build_knowledge_graph
 from opentrons_knowledge.retrieval.build import RetrievalBuild, build_retrieval
@@ -270,6 +271,16 @@ def build_corpus(
         counts["retrieval_chunks"] = retrieval.manifest.chunk_count
         canonical_metadata.update(retrieval_metadata)
         retrieval_report = retrieval.report
+    if manifest.protocol_designer_tables is not None:
+        canonical_metadata.update(
+            _export_protocol_designer_tables(
+                manifest,
+                materialized,
+                corpus_root,
+                work_root=work,
+                search_roots=search_roots,
+            )
+        )
 
     repo_root = Path(__file__).resolve().parents[3]
     if schemas_dir is None:
@@ -698,6 +709,44 @@ def _render_pinned_docs(
         )
         raise SourceResolutionError(msg)
     return site
+
+
+def _export_protocol_designer_tables(
+    manifest: SourceManifest,
+    materialized: MaterializedSources,
+    corpus_root: Path,
+    *,
+    work_root: Path,
+    search_roots: list[Path],
+) -> dict[str, object]:
+    """Evaluate the Protocol Designer tables at the resolved commit into ``corpus/``."""
+    settings = manifest.protocol_designer_tables
+    assert settings is not None
+    protocol_designer = materialized.sources[settings.source]
+    labware = materialized.sources[settings.labware_source]
+    raw = evaluate_tables(
+        repo=locate_repo(manifest.sources[settings.source], search_roots),
+        commit=protocol_designer.commit,
+        settings=settings,
+        labware_definitions=Path(labware.materialize_root or "") / settings.labware_definitions,
+        work_root=work_root / "protocol_designer_tables",
+    )
+    files = write_tables(
+        raw,
+        corpus_root / TABLES_DIR,
+        protocol_designer=protocol_designer,
+        labware=labware,
+        labware_definitions=settings.labware_definitions,
+    )
+    log.info("protocol_designer_tables_written", files=files, commit=protocol_designer.commit)
+    return {
+        "protocol_designer_tables": {
+            "path": f"{TABLES_DIR}/",
+            "files": files,
+            "tag": protocol_designer.tag,
+            "commit": protocol_designer.commit,
+        }
+    }
 
 
 def _build_retrieval(

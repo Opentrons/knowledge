@@ -167,6 +167,41 @@ def test_load_real_1000_k4_manifest() -> None:
     assert source.compatibility.validation_record == "compatibility/protocol-designer-v10.0.0.yaml"
     record = path.parent / "compatibility" / "protocol-designer-v10.0.0.yaml"
     assert record.is_file()
+    assert manifest.protocol_designer_tables is None
+
+
+def test_load_real_1000_k5_manifest() -> None:
+    corpora = Path(__file__).resolve().parents[2] / "corpora"
+    manifest = load_source_manifest(corpora / "10.0.0-k5" / "source-manifest.yaml")
+    k4 = load_source_manifest(corpora / "10.0.0-k4" / "source-manifest.yaml")
+    assert manifest.corpus.version == "10.0.0-k5"
+    assert manifest.sources.keys() == k4.sources.keys()
+    for key, entry in manifest.sources.items():
+        assert (entry.tag, entry.commit) == (k4.sources[key].tag, k4.sources[key].commit)
+        if key != "protocol_designer":
+            assert entry.paths == k4.sources[key].paths
+    tables = manifest.protocol_designer_tables
+    assert tables is not None
+    assert (tables.source, tables.labware_source) == ("protocol_designer", "shared_data")
+    assert manifest.sources["protocol_designer"].paths == [
+        "protocol-designer/src/constants.ts",
+        "protocol-designer/src/modules/moduleData.ts",
+        "protocol-designer/src/pages/Designer/DeckSetup/constants.ts",
+        "protocol-designer/src/pages/Designer/DeckSetup/utils.ts",
+        "protocol-designer/src/pages/Onboarding/constants.ts",
+        "protocol-designer/src/utils/labwareModuleCompatibility.ts",
+    ]
+    assert manifest.sources["protocol_designer"].paths != k4.sources["protocol_designer"].paths
+    assert manifest.rendered_docs == k4.rendered_docs
+    assert manifest.retrieval == k4.retrieval
+
+
+def test_protocol_designer_tables_require_declared_sources() -> None:
+    path = Path(__file__).resolve().parents[2] / "corpora" / "10.0.0-k5" / "source-manifest.yaml"
+    data = load_source_manifest(path).model_dump(mode="json")
+    del data["sources"]["protocol_designer"]
+    with pytest.raises(ValidationError, match=r"protocol_designer_tables\.source"):
+        SourceManifest.model_validate(data)
 
 
 def test_load_real_1000_k1_manifest() -> None:

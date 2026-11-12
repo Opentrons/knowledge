@@ -1,8 +1,11 @@
 # Implementation Plan
 
-Status: the current corpus is **`10.0.0-k3`** (tar.zst + OCI/ORAS). It adds
-rendered docs (`canonical/`) and a retrieval bundle (`retrieval/`: documents,
-chunks, `api/bm25/`, `docs/bm25/`) on the same source pins as `10.0.0-k2`.
+Status: the current corpus is **`10.0.0-k5`** (tar.zst + OCI/ORAS). `10.0.0-k3`
+added rendered docs (`canonical/`) and a retrieval bundle (`retrieval/`:
+documents, chunks, `api/bm25/`, `docs/bm25/`) on the same source pins as
+`10.0.0-k2`. `10.0.0-k4` added the Protocol Designer allowlist as a raw file.
+`10.0.0-k5` copies the rest of those compatibility sources and publishes them
+as evaluated JSON under `corpus/protocol-designer/`. Retrieval is unchanged.
 The initial `9.1.1-k1` product (normalized `corpus/` only) is still the base
 the later revisions build on.
 
@@ -29,8 +32,8 @@ Publication formats are `opentrons-knowledge-<version>.tar.zst` (GitHub Releases
 and `ghcr.io/opentrons/opentrons-knowledge:<version>` (ORAS/OCI).
 The on-disk layout is the interface. From `10.0.0-k3` it includes `canonical/`
 and `retrieval/` (two BM25 indexes). No embeddings. The package searches a
-local bundle (`search_api`, `search_docs`, `fused_search`); it does not host
-a query service. The docs chunking and the merge rule are the ones measured in
+local bundle (`search_api`, `search_docs`); it does not host
+a query service. The docs chunking is the one measured in
 [retrieval-experiments.md](retrieval-experiments.md).
 
 ## Phase 8: CI and release automation (done)
@@ -41,5 +44,5 @@ a query service. The docs chunking and the merge rule are the ones measured in
   [source-analysis.md](source-analysis.md)).
 - AI v1 guides are monorepo paths pinned to an `ai-server@*` tag; `pd/` is excluded.
 - A full corpus build expects a local Opentrons checkout or a network clone.
-  The current manifest is `corpora/10.0.0-k3/source-manifest.yaml`.
+  The current manifest is `corpora/10.0.0-k5/source-manifest.yaml`.
 - CI builds a tiny fixture corpus for determinism.

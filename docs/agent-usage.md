@@ -2,9 +2,11 @@
 
 This document tells agents and agent authors how to consume an Opentrons
 Knowledge Corpus. The corpus is a **versioned data package** of pinned Opentrons
-source material (docs, Protocol API, shared-data, curated AI guides). From
-`10.0.0-k3` it also ships rendered docs (`canonical/`) and two BM25 indexes
-(`retrieval/`). No embeddings ship, and there is no hosted search service.
+source material (docs, Protocol API, shared-data, curated AI guides, and
+from `10.0.0-k5` Protocol Designer compatibility tables). From `10.0.0-k3` it
+also ships rendered docs (`canonical/`) and two BM25 indexes (`retrieval/`).
+No embeddings ship, and there is no hosted search service. The current corpus
+is `10.0.0-k5`.
 
 Canonical copies:
 
@@ -24,14 +26,17 @@ An immutable, versioned, source-linked compilation of:
 Distribution formats:
 
 ```text
-opentrons-knowledge-10.0.0-k3.tar.zst
-ghcr.io/opentrons/opentrons-knowledge:10.0.0-k3
+opentrons-knowledge-10.0.0-k5.tar.zst
+ghcr.io/opentrons/opentrons-knowledge:10.0.0-k5
 ```
 
 A current artifact has four layers for the same pins:
 
-- **`raw/`**: verbatim source files (monorepo paths under each manifest source key)
-- **`corpus/`**: normalized JSONL records (sections, symbols, entities, …)
+- **`raw/`**: verbatim source files (monorepo paths under each manifest source key).
+  `raw/protocol_designer/` is the Protocol Designer compatibility sources.
+- **`corpus/`**: normalized JSONL records (sections, symbols, entities, …).
+  `corpus/protocol-designer/*.json` (from `10.0.0-k5`) is the same compatibility,
+  evaluated. It is not turned into entities or search chunks.
 - **`canonical/`**: the pinned MkDocs site, rendered and extracted (from `10.0.0-k3`)
 - **`retrieval/`**: documents, chunks, and two BM25 indexes (from `10.0.0-k3`)
 
@@ -42,15 +47,15 @@ Earlier revisions are described in their own `corpora/<version>/RELEASE-NOTES.md
 
 ```bash
 # From a local build
-opentrons-knowledge pack --corpus dist/opentrons-knowledge-10.0.0-k3
+opentrons-knowledge pack --corpus dist/opentrons-knowledge-10.0.0-k5
 
 # Unpack a GitHub Release / local archive
-opentrons-knowledge unpack dist/opentrons-knowledge-10.0.0-k3.tar.zst --output dist
+opentrons-knowledge unpack dist/opentrons-knowledge-10.0.0-k5.tar.zst --output dist
 
 # Or pull from GHCR (requires oras on PATH)
-opentrons-knowledge pull 10.0.0-k3 --output dist
+opentrons-knowledge pull 10.0.0-k5 --output dist
 
-opentrons-knowledge validate --corpus dist/opentrons-knowledge-10.0.0-k3
+opentrons-knowledge validate --corpus dist/opentrons-knowledge-10.0.0-k5
 ```
 
 Pin the corpus version to the Opentrons software release you target.
@@ -76,6 +81,7 @@ corpus/
   examples.jsonl.zst
   constraints.jsonl.zst
   source-files.jsonl.zst
+  protocol-designer/  # from 10.0.0-k5: evaluated compatibility JSON, not records
 canonical/            # optional; rendered MkDocs HTML as structured documents
   documents.jsonl.zst
   manifest.json
@@ -106,17 +112,23 @@ Records are deterministic JSONL (zstd), sorted by primary id.
 | Python API symbol, signature, parameters | `retrieval/api/bm25/` (exact name, then section text) |
 | Procedure, hardware, labware, module | `retrieval/docs/bm25/` (BM25). Resolve hits through `retrieval/documents.jsonl.zst` |
 
-When `retrieval/` is present, register three search tools: `search_api` and
-`search_docs` over the two indexes, and `search_all`, which merges them into one
-ranked list. The API index holds every documented symbol (325 on `10.0.0-k3`);
-a query of `Class.method` returns that reference section. The docs index holds
-the other sections plus labware, pipette, and module records, cut the way the
-evaluation in `reports/retrieval-eval.json` selected. A hit's `text` is the
-whole section under that heading (every chunk of it, in order). Cite the
-document's `url` and `source_url` from `retrieval/documents.jsonl.zst`. Every
-`retrieval_id` is unique and derived from a source path. No embeddings ship.
-Query shapes are in [retrieval-tool.md](retrieval-tool.md). Search runs against
-the local bundle; this repo does not host a query service.
+When `retrieval/` is present, register two search tools. The descriptions to
+copy into the tool registry are in [retrieval-tool.md](retrieval-tool.md).
+
+| Tool | Index | What a hit is | Query |
+|---|---|---|---|
+| `search_api` | `retrieval/api/bm25/` | One documented symbol: signature, parameters, returns, version notes. | `Class.method`, for example `InstrumentContext.blow_out`. Not a sentence. |
+| `search_docs` | `retrieval/docs/bm25/` | One how-to section, or one labware, pipette, or module record. The page intro and each heading are separate hits. | The words a heading or a load name would use. Not a sentence. |
+
+Call the two tools separately. A score belongs to the index that produced it.
+Do not register a tool that merges the lists. Cite `url` and `source_url` from
+`retrieval/documents.jsonl.zst`. A hit's `text` is the whole section (every
+chunk of it, in order). Every `retrieval_id` is unique and derived from a
+source path. No embeddings ship. Search runs against the local bundle; this
+repo does not host a query service.
+
+A consumer can create a fused search that returns documents from both indexes
+together, and would probably do that after its own embedding and re-ranking.
 
 ## Authority precedence (required)
 
@@ -149,8 +161,8 @@ Cite:
 
 1. Confirm corpus version matches the target Opentrons release.
 2. Classify the question (symbol / entity / procedure / constraint).
-3. When `retrieval/` is present, search it (`search_api`, `search_docs`, or
-   `search_all`). Otherwise read the relevant JSONL.
+3. When `retrieval/` is present, call `search_api`, `search_docs`, or both
+   as separate calls. Otherwise read the relevant JSONL.
 4. Apply authority precedence.
 5. Cite `source_url` and corpus version.
 6. If evidence is missing or conflicting, say so.
@@ -160,6 +172,5 @@ Cite:
 - Do not scrape docs.opentrons.com when the corpus covers the topic.
 - Do not assume AI guide text is release-exact without checking symbols/entities.
 - Do not expect a hosted search service. Search the local `retrieval/` bundle
-  with the CLI or `opentrons_knowledge.retrieval` (`search_api`, `search_docs`,
-  `fused_search`).
+  with the CLI or `opentrons_knowledge.retrieval` (`search_api`, `search_docs`).
 - Do not mix corpus versions in one session unless doing an explicit diff/migration.

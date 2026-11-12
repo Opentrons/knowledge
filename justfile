@@ -98,7 +98,14 @@ docs-inspect:
 # Retrieval (documents, chunks, HDE-native BM25 index)
 # -----------------------------------------------------------------------------
 
-retrieval_corpus := "dist/opentrons-knowledge-10.0.0-k4"
+retrieval_corpus := "dist/opentrons-knowledge-10.0.0-k5"
+
+# Build the 10.0.0-k5 corpus (k4 plus evaluated Protocol Designer compatibility JSON)
+build-10-0-0-k5:
+    {{ python }} opentrons-knowledge build \
+        --manifest corpora/10.0.0-k5/source-manifest.yaml \
+        --opentrons-repo {{ opentrons_repo }} \
+        --output dist
 
 # Build the 10.0.0-k4 corpus (k3 plus the Protocol Designer allowlist as a raw file)
 build-10-0-0-k4:
@@ -126,7 +133,7 @@ retrieval-validate:
     {{ python }} opentrons-knowledge retrieval validate --bundle {{ retrieval_corpus }}/retrieval
 
 # Search the built bundle: just retrieval-search "InstrumentContext.blow_out" api
-retrieval-search query index="all":
+retrieval-search query index="both":
     {{ python }} opentrons-knowledge retrieval search "{{ query }}" \
         --bundle {{ retrieval_corpus }}/retrieval --index {{ index }}
 

@@ -47,8 +47,9 @@ Compared with one chunk per section and no context, the docs index improves
 curated MRR@10 from 0.501 to 0.601 and structural Hit@10 from 0.533 to 0.975.
 That comparison is what selected the docs chunking. Symbol sections then move
 to the API index, where all 325 documented names return their own section at
-rank 1 (`retrieval audit`). Searching both indexes together is a query-time
-merge in this package (CLI `--index all`); it is not stored in the artifact.
+rank 1 (`retrieval audit`). The two indexes stay separate. A consumer can
+create a fused search that returns documents from both indexes together, and
+would probably do that after its own embedding and re-ranking.
 The curated questions are a draft awaiting docs-owner review. See
 `docs/retrieval-experiments.md`.
 

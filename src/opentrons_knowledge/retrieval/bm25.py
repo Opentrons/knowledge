@@ -203,24 +203,6 @@ def search_api(index: tantivy.Index, query: str, limit: int = 10) -> list[tuple[
     return _hits(index, prose, limit)
 
 
-def names_symbol(index: tantivy.Index, query: str) -> bool:
-    """Return True when the query is one token that names a documented symbol.
-
-    Args:
-        index: An index built by ``build_api_index``.
-        query: The caller's query.
-
-    Returns:
-        True for ``InstrumentContext.blow_out``, ``blow_out``, or any other single
-        token that matches a ``symbol`` value. False for a question, which has
-        several words.
-    """
-    if len(query.split()) != 1:
-        return False
-    names, _errors = index.parse_query_lenient(query, ["symbol"])
-    return bool(_hits(index, names, 1))
-
-
 def _writer(schema: tantivy.Schema, path: Path | None) -> tuple[tantivy.Index, tantivy.IndexWriter]:
     if path is not None:
         path.mkdir(parents=True, exist_ok=True)

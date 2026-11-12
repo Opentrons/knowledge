@@ -12,14 +12,14 @@ MCP server, or lookup SDK. The same corpus directory is published as both a
 Human-readable identity:
 
 ```text
-opentrons-knowledge:10.0.0-k3
+opentrons-knowledge:10.0.0-k5
 ```
 
 Published locations (current corpus; the pattern is the same for every revision):
 
 ```text
-opentrons-knowledge-10.0.0-k3.tar.zst
-ghcr.io/opentrons/opentrons-knowledge:10.0.0-k3
+opentrons-knowledge-10.0.0-k5.tar.zst
+ghcr.io/opentrons/opentrons-knowledge:10.0.0-k5
 ghcr.io/opentrons/opentrons-knowledge@sha256:<digest>
 ```
 
@@ -45,7 +45,7 @@ scope. From `10.0.0-k3` a measured BM25 bundle is in scope
 ([retrieval-design.md](retrieval-design.md),
 [retrieval-experiments.md](retrieval-experiments.md)): two indexes, derived from
 the corpus records, which they never replace. Searching them, including the
-merge of the two rankings, is a local query over those files.
+top hits from each index, is a local query over those files.
 
 ## Package Layout
 
@@ -59,7 +59,7 @@ src/opentrons_knowledge/
   models/           # Pydantic canonical models + manifests
   normalization/    # IDs, hashing, deterministic JSONL
   relationships/    # relationship + constraint extraction
-  retrieval/        # retrieval documents, chunkers, two BM25 indexes, fusion, evaluation, bundle
+  retrieval/        # retrieval documents, chunkers, two BM25 indexes, evaluation, bundle
   compatibility/    # compatibility validation
   artifacts/        # packaging, checksums, reports, tar.zst
   registry/         # ORAS publish/pull for OCI
@@ -109,8 +109,8 @@ Conflicts are never silently deleted.
 This package **builds, packs, and publishes** corpora, and it searches a local
 bundle. It does not host a search service, ship embeddings, or offer a
 `get_symbol` lookup API. Downstream systems unpack or pull the artifact and
-search `retrieval/api/` and `retrieval/docs/` (separately, or merged with
-`fused_search` / the CLI `--index all`), or read `corpus/` and `canonical/`
+search `retrieval/api/` and `retrieval/docs/` as two tools (`search_api`,
+`search_docs`), or read `corpus/` and `canonical/`
 with their own stack.
 
 Agent-facing usage instructions ship in the repository and inside every corpus

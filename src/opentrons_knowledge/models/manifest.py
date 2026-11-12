@@ -128,6 +128,39 @@ class RenderedDocsConfig(StrictModel):
         return env
 
 
+class ProtocolDesignerTablesConfig(StrictModel):
+    """Evaluate Protocol Designer compatibility tables into ``corpus/protocol-designer/``.
+
+    The exporter in ``tools/protocol-designer-export`` imports the TypeScript
+    modules from a checkout of ``source`` at its resolved commit and runs
+    ``getLabwareCompatibleWithModule`` against the current Opentrons labware
+    definitions from ``labware_source``.
+    """
+
+    source: str = "protocol_designer"
+    labware_source: str = "shared_data"
+    labware_definitions: str = "shared-data/labware/definitions"
+    package: str = "protocol-designer"
+    sparse_paths: list[str] = Field(
+        default_factory=lambda: [
+            "tsconfig-base.json",
+            "protocol-designer/package.json",
+            "protocol-designer/tsconfig.json",
+            "protocol-designer/tsconfig-data.json",
+            "protocol-designer/src",
+            "components/tsconfig.json",
+            "step-generation/package.json",
+            "step-generation/tsconfig.json",
+            "step-generation/src",
+            "shared-data",
+        ],
+        description=(
+            "Paths checked out at the source commit. Includes the tsconfig files that "
+            "protocol-designer/tsconfig.json references, which Vite reads."
+        ),
+    )
+
+
 class RetrievalSettings(StrictModel):
     """Retrieval bundle to build into the corpus. Needs ``rendered_docs``.
 
@@ -169,6 +202,7 @@ class SourceManifest(StrictModel):
     )
     rendered_docs: RenderedDocsConfig | None = None
     retrieval: RetrievalSettings | None = None
+    protocol_designer_tables: ProtocolDesignerTablesConfig | None = None
 
     @model_validator(mode="after")
     def require_core_sources(self) -> SourceManifest:
@@ -183,6 +217,23 @@ class SourceManifest(StrictModel):
         if self.retrieval and not self.rendered_docs:
             msg = "retrieval requires rendered_docs (it is built from canonical documents)"
             raise ValueError(msg)
+        tables = self.protocol_designer_tables
+        if tables:
+            for field in ("source", "labware_source"):
+                key = getattr(tables, field)
+                if key not in self.sources:
+                    msg = f"protocol_designer_tables.{field} '{key}' is not a declared source"
+                    raise ValueError(msg)
+            labware_paths = self.sources[tables.labware_source].paths
+            if not any(
+                tables.labware_definitions == p or tables.labware_definitions.startswith(f"{p}/")
+                for p in labware_paths
+            ):
+                msg = (
+                    f"protocol_designer_tables.labware_definitions '{tables.labware_definitions}' "
+                    f"is not under a {tables.labware_source} path"
+                )
+                raise ValueError(msg)
         return self
 
 

@@ -23,6 +23,7 @@ dist/opentrons-knowledge-<version>/
     examples.jsonl.zst
     constraints.jsonl.zst
     source-files.jsonl.zst
+    protocol-designer/     # optional: evaluated Protocol Designer JSON (10.0.0-k5+)
   canonical/               # optional: only when the source manifest sets rendered_docs
     documents.jsonl.zst    # rendered-HTML canonical documents (see canonical-docs.md)
     manifest.json
@@ -58,8 +59,9 @@ Logical separation is stable even if compression formats evolve:
 
 There is no embeddings file. From `10.0.0-k3` the bundle ships two BM25 indexes,
 `retrieval/api/bm25/` and `retrieval/docs/bm25/`. A search hit returns every
-chunk of the matched section. Searching both indexes together merges the two
-rankings at query time and stores nothing extra. See
+chunk of the matched section. The indexes stay separate. A consumer can create
+a fused search that returns documents from both indexes together, and would
+probably do that after its own embedding and re-ranking. See
 [retrieval-design.md](retrieval-design.md),
 [retrieval-experiments.md](retrieval-experiments.md), and
 [retrieval-tool.md](retrieval-tool.md). Tantivy names its segment

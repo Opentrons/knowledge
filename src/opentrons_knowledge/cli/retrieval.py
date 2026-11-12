@@ -20,11 +20,11 @@ from opentrons_knowledge.models.manifest import RetrievalSettings
 from opentrons_knowledge.normalization.serialize import read_jsonl_zst, write_json
 from opentrons_knowledge.retrieval.audit import audit_api
 from opentrons_knowledge.retrieval.bm25 import search, search_api
+from opentrons_knowledge.retrieval.both import CHUNKS_PER_SECTION, search_both
 from opentrons_knowledge.retrieval.build import build_retrieval
 from opentrons_knowledge.retrieval.bundle import API_INDEX, DOCS_INDEX, open_index, validate_bundle
 from opentrons_knowledge.retrieval.documents import build_retrieval_documents, load_retrieval_inputs
 from opentrons_knowledge.retrieval.evaluation import load_queries, report_markdown, run_experiments
-from opentrons_knowledge.retrieval.fusion import fused_search
 from opentrons_knowledge.retrieval.models import (
     Chunk,
     ChunkingStrategy,
@@ -33,11 +33,6 @@ from opentrons_knowledge.retrieval.models import (
     RetrievalKind,
 )
 from opentrons_knowledge.retrieval.passages import Passage, passages_for_hits
-
-# Longest section in the 10.0.0-k3 docs index is 6 chunks. Fetching this many
-# chunks per requested hit keeps `limit` as a count of sections after siblings
-# of one section collapse into a single passage.
-_CHUNKS_PER_SECTION = 8
 
 _console = Console()
 
@@ -140,7 +135,9 @@ def search_cmd(
     query: str = typer.Argument(...),
     bundle: Path = _BUNDLE,
     index: str = typer.Option(
-        "all", "--index", help="api, docs, or all (one ranked list from both)."
+        "both",
+        "--index",
+        help="api, docs, or both (top hits from each index).",
     ),
     limit: int = typer.Option(5, "--limit", "-k"),
     json_out: bool = typer.Option(False, "--json"),
@@ -152,6 +149,7 @@ def search_cmd(
     if json_out:
         typer.echo(json.dumps([hit.as_json() for hit in hits], indent=2, ensure_ascii=False))
         return
+    _console.print(_mode_note(which, limit))
     _render(query, hits, which)
 
 
@@ -159,11 +157,13 @@ def search_cmd(
 def explore_cmd(
     bundle: Path = _BUNDLE,
     index: str = typer.Option(
-        "all", "--index", help="api, docs, or all (one ranked list from both)."
+        "both",
+        "--index",
+        help="api, docs, or both (top hits from each index).",
     ),
     limit: int = typer.Option(5, "--limit", "-k"),
 ) -> None:
-    """Interactive search. Type a query, or /api, /docs, /all, /k N, /open N, /quit."""
+    """Interactive search. Type a query, or /api, /docs, /both, /k N, /open N, /quit."""
     which = _index_choice(index)
     loaded = _load(bundle)
     counts = json.loads((bundle / "manifest.json").read_text(encoding="utf-8")).get(
@@ -185,8 +185,8 @@ def explore_cmd(
             which = "api"
         elif line == "/docs":
             which = "docs"
-        elif line == "/all":
-            which = "all"
+        elif line in {"/both", "/all"}:
+            which = "both"
         elif line.startswith("/k"):
             parsed = _parse_limit(line)
             if parsed is not None:
@@ -257,7 +257,7 @@ class _Hit:
     def as_json(self) -> dict[str, Any]:
         return {
             "index": self.index,
-            "score": round(self.score, 3),
+            "score": round(self.score, 4),
             "chunk_id": self.chunk_id,
             "retrieval_id": self.retrieval_id,
             "title": self.title,
@@ -289,14 +289,15 @@ def _load(bundle: Path) -> _Bundle:
 
 
 def _search(
-    loaded: _Bundle, query: str, which: Literal["api", "docs", "all"], limit: int
+    loaded: _Bundle, query: str, which: Literal["api", "docs", "both"], limit: int
 ) -> list[_Hit]:
-    fetch = limit * _CHUNKS_PER_SECTION
-    if which == "all":
-        fused = fused_search(
-            query, loaded.api, loaded.docs, loaded.chunks, limit=limit, fetch=fetch
-        )
-        return [_to_hit(loaded, item.index, item.passage) for item in fused]
+    """Return hits for one index, or the top of each index for ``both``."""
+    if which == "both":
+        results = search_both(query, loaded.api, loaded.docs, loaded.chunks, limit=limit)
+        return [_to_hit(loaded, "api", passage) for passage in results.api] + [
+            _to_hit(loaded, "docs", passage) for passage in results.docs
+        ]
+    fetch = limit * CHUNKS_PER_SECTION
     if which == "api":
         found = search_api(loaded.api, query, fetch)
     else:
@@ -322,20 +323,34 @@ def _to_hit(loaded: _Bundle, index: str, passage: Passage) -> _Hit:
 
 
 def _render(query: str, hits: list[_Hit], which: str) -> None:
-    if not hits:
+    # Numbers run across every table, so `/open N` addresses any hit shown.
+    numbered = list(enumerate(hits, start=1))
+    if which == "both":
+        for index in ("api", "docs"):
+            rows = [(number, hit) for number, hit in numbered if hit.index == index]
+            if rows:
+                _console.print(_table(f"{query}  ({index})", rows))
+            else:
+                _console.print(f"[yellow]No {index} hits[/yellow] for [bold]{query}[/bold].")
+    elif not hits:
         _console.print(f"[yellow]No hits[/yellow] for [bold]{query}[/bold] in {which}.")
         return
-    table = Table(title=f"{query}  ({which})", show_lines=False, expand=True)
+    else:
+        _console.print(_table(f"{query}  ({which})", numbered))
+    for number, hit in numbered:
+        _console.print(_panel(number, hit, preview=True))
+
+
+def _table(title: str, rows: list[tuple[int, _Hit]]) -> Table:
+    table = Table(title=title, show_lines=False, expand=True)
     table.add_column("#", justify="right", style="bold", width=3)
     table.add_column("index", width=5)
-    table.add_column("score", justify="right", width=7)
+    table.add_column("bm25", justify="right", width=7)
     table.add_column("result")
-    for number, hit in enumerate(hits, start=1):
+    for number, hit in rows:
         label = hit.api_name or hit.heading or hit.title
         table.add_row(str(number), hit.index, f"{hit.score:.2f}", label)
-    _console.print(table)
-    for number, hit in enumerate(hits, start=1):
-        _console.print(_panel(number, hit, preview=True))
+    return table
 
 
 def _panel(number: int, hit: _Hit, *, preview: bool) -> Panel:
@@ -367,37 +382,66 @@ def _open_hit(hits: list[_Hit], line: str) -> None:
     _console.print(_panel(int(parts[1]), hits[int(parts[1]) - 1], preview=False))
 
 
+def _mode_catalog(limit: int) -> list[tuple[str, str]]:
+    """One description per mode. The score sentence is the part people misread."""
+    return [
+        (
+            "api",
+            f"up to {limit} Python API sections. Query Class.method, for example "
+            "InstrumentContext.blow_out. The score is BM25 from the API index only.",
+        ),
+        (
+            "docs",
+            f"up to {limit} how-to, labware, pipette, and module passages. Query with the "
+            "words a heading would use. The score is BM25 from the docs index only.",
+        ),
+        (
+            "both",
+            f"up to {limit} from each index, in two tables. Each score is that index's own "
+            "BM25. The indexes are separate, so do not compare a number in the api table "
+            "with a number in the docs table.",
+        ),
+    ]
+
+
+def _mode_note(which: str, limit: int) -> str:
+    text = dict(_mode_catalog(limit))[which]
+    return f"[dim]{which}:[/dim] {text}"
+
+
 def _print_instructions(counts: dict[str, Any], which: str, limit: int) -> None:
-    """Reprint the command list so it stays on screen after each result."""
-    _console.print(
-        Panel(
-            "\n".join(
-                [
-                    f"[bold]api[/bold]  {counts.get('api', 0)} symbol sections. "
-                    "Query with [bold]Class.method[/bold], for example InstrumentContext.blow_out.",
-                    f"[bold]docs[/bold]  {counts.get('docs', 0)} passages, including labware, "
-                    "pipettes, and modules. Query with the words a heading would use.",
-                    "Commands: [bold]/api[/bold]  [bold]/docs[/bold]  [bold]/all[/bold]  "
-                    "[bold]/k N[/bold]  [bold]/open N[/bold]  [bold]/quit[/bold]",
-                    f"Now: [bold]{which}[/bold], showing [bold]{limit}[/bold] hits.",
-                ]
-            ),
-            title="Retrieval search",
-            border_style="cyan",
-        )
+    """Reprint every mode, with the current one marked, so the score rule stays visible."""
+    lines = [
+        "Two indexes, scored separately. Nothing rescales a BM25 score.",
+        f"[bold]api[/bold] {counts.get('api', 0)} symbol sections in retrieval/api/bm25.  "
+        f"[bold]docs[/bold] {counts.get('docs', 0)} passages in retrieval/docs/bm25.",
+        "",
+    ]
+    for name, text in _mode_catalog(limit):
+        mark = "[bold]>[/bold]" if name == which else " "
+        lines.append(f"{mark} [bold]{name}[/bold]  {text}")
+    lines.extend(
+        [
+            "",
+            "Type a query. [bold]/open N[/bold] uses the numbers across every table.",
+            "[bold]Commands[/bold]  /api  /docs  /both  /k N  /open N  /quit",
+        ]
     )
+    _console.print(Panel("\n".join(lines), title="Retrieval search", border_style="cyan"))
 
 
-def _index_choice(value: str) -> Literal["api", "docs", "all"]:
-    choices: dict[str, Literal["api", "docs", "all"]] = {
+def _index_choice(value: str) -> Literal["api", "docs", "both"]:
+    # `all` is the old name for `both`, kept so existing commands still work.
+    choices: dict[str, Literal["api", "docs", "both"]] = {
         "api": "api",
         "docs": "docs",
-        "all": "all",
+        "both": "both",
+        "all": "both",
     }
     try:
         return choices[value]
     except KeyError:
-        raise typer.BadParameter("--index must be api, docs, or all") from None
+        raise typer.BadParameter("--index must be api, docs, or both") from None
 
 
 def _parse_limit(line: str) -> int | None:

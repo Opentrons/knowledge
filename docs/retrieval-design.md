@@ -1,6 +1,6 @@
 # Design: Shipping Chunks, Indexes, and Retrieval Experiments
 
-Status: **accepted** for `10.0.0-k3` (BM25 only). Results and the reasoning
+Status: **accepted** for `10.0.0-k3` (BM25 only) and still what `10.0.0-k5` ships. Results and the reasoning
 behind the shipped configuration are in
 [retrieval-experiments.md](retrieval-experiments.md).
 
@@ -41,10 +41,9 @@ Knowledge now ships, for each release:
 - `corpus/*.jsonl.zst`, `raw/`, and `canonical/` are unchanged and remain the
   source of truth. `retrieval/` is derived from them and can be regenerated
   with `opentrons-knowledge retrieval build`.
-- This package searches a local bundle: `search_api`, `search_docs`, and
-  `fused_search` (the CLI `--index all`). A hit's text is every chunk of the
-  matched section. There is no hosted search service; a consumer can rank the
-  same files differently.
+- This package searches a local bundle as two tools, `search_api` and
+  `search_docs`. The CLI `--index both` shows both lists. A hit's text is
+  every chunk of the matched section. There is no hosted search service.
 
 ## Retrievable documents
 
@@ -132,12 +131,10 @@ those are runtime state and are excluded from corpus checksums and archives.
 
 ## Consumer impact
 
-- Register three tools. `search_api` reads `retrieval/api/bm25/`. `search_docs`
-  reads `retrieval/docs/bm25/`. `search_all` runs both and merges the lists. Query
-  shapes are in [retrieval-tool.md](retrieval-tool.md).
-- A merged search over both indexes is a query-time step (reciprocal rank
-  fusion, rule in [retrieval-experiments.md](retrieval-experiments.md#merging-the-two-indexes)).
-  Nothing extra is stored in the bundle.
+- Register two tools. `search_api` reads `retrieval/api/bm25/`. `search_docs`
+  reads `retrieval/docs/bm25/`. Query shapes are in [retrieval-tool.md](retrieval-tool.md).
+  A consumer can create a fused search that returns documents from both indexes
+  together, and would probably do that after its own embedding and re-ranking.
 - Adding dense retrieval later means a vector file aligned to `chunks.jsonl.zst`,
   measured on the same questions before it ships.
 - Chunk and retrieval ids are unique by construction.

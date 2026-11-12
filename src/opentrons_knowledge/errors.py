@@ -23,6 +23,10 @@ class DocsBuildError(KnowledgeError):
     """The Opentrons MkDocs site could not be checked out or rendered."""
 
 
+class ProtocolDesignerExportError(KnowledgeError):
+    """Protocol Designer compatibility tables could not be evaluated."""
+
+
 class CorpusValidationError(KnowledgeError):
     """Built corpus failed validation or checksum verification."""
 

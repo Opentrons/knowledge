@@ -38,7 +38,7 @@ After `main` is green:
 ```bash
 gh workflow run publish.yml \
   --repo Opentrons/knowledge \
-  -f corpus_version=10.0.0-k3 \
+  -f corpus_version=10.0.0-k5 \
   -f confirm=publish
 ```
 

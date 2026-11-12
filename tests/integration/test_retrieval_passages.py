@@ -15,8 +15,8 @@ import pytest
 
 from opentrons_knowledge.normalization.serialize import read_jsonl_zst
 from opentrons_knowledge.retrieval.bm25 import lookup_query, search, search_api
+from opentrons_knowledge.retrieval.both import search_both
 from opentrons_knowledge.retrieval.bundle import open_index
-from opentrons_knowledge.retrieval.fusion import fused_search
 from opentrons_knowledge.retrieval.passages import chunk_body, passages_for_hits
 
 BUNDLE = (
@@ -233,31 +233,32 @@ def test_api_search_returns_the_whole_symbol_section(
     assert len(corpus["by_section"][retrieval_id]) == 1
 
 
-def test_fused_search_puts_every_symbol_first(corpus: dict[str, Any]) -> None:
-    """Every documented symbol, asked by name, is the first result of the merged search."""
+def test_search_both_keeps_each_index_in_its_own_list(corpus: dict[str, Any]) -> None:
+    """Both lists come back, each within the limit, and each holds only its own index."""
+    both = search_both(
+        "blow out extra air", corpus["api"], corpus["docs"], corpus["chunks"], limit=5
+    )
+    assert 0 < len(both.api) <= 5
+    assert 0 < len(both.docs) <= 5
+    for passage in both.api:
+        assert corpus["documents"][passage.retrieval_id].get("api_name")
+    for passage in both.docs:
+        assert not corpus["documents"][passage.retrieval_id].get("api_name")
+    assert (
+        both.api[0].retrieval_id
+        == "doc:python-api/reference/instruments/#opentrons.protocol_api.InstrumentContext.blow_out"
+    )
+
+
+def test_search_both_puts_every_symbol_first_in_the_api_list(corpus: dict[str, Any]) -> None:
+    """Every documented symbol, asked by name, is the first passage of the API list."""
     misses = []
     for document in corpus["documents"].values():
         api_name = document.get("api_name")
         if not api_name:
             continue
         query = lookup_query(api_name)
-        top = fused_search(query, corpus["api"], corpus["docs"], corpus["chunks"], limit=1)
-        if (
-            not top
-            or top[0].index != "api"
-            or top[0].passage.retrieval_id != document["retrieval_id"]
-        ):
+        both = search_both(query, corpus["api"], corpus["docs"], corpus["chunks"], limit=1)
+        if not both.api or both.api[0].retrieval_id != document["retrieval_id"]:
             misses.append(query)
     assert misses == []
-
-
-@pytest.mark.parametrize(("query", "retrieval_id"), DOCS_CASES, ids=[q for q, _id in DOCS_CASES])
-def test_fused_search_keeps_the_docs_section_first(
-    query: str, retrieval_id: str, corpus: dict[str, Any]
-) -> None:
-    top = fused_search(query, corpus["api"], corpus["docs"], corpus["chunks"], limit=3)[0]
-    assert top.index == "docs"
-    assert top.passage.retrieval_id == retrieval_id
-    flat = _flat(top.passage.text)
-    for chunk in corpus["by_section"][retrieval_id]:
-        assert _flat(chunk_body(chunk["text"])) in flat

@@ -1,0 +1,19 @@
+source_key: protocol_designer
+target_release: v10.0.0
+status: validated
+relationship: latest-protocol-designer-tag
+validated_on: "2026-11-10"
+notes: >
+  Protocol Designer compatibility tables from production tag
+  protocol-designer@9.0.1 (commit 677274a40c5d22044c4efe7365d4904a56eeefd4).
+  The compatibility modules are copied verbatim under raw/protocol_designer/.
+  The build imports them at that commit (Node.js >= 24.22.1, Opentrons edge)
+  and writes their runtime values to corpus/protocol-designer/*.json. This pin
+  tracks the latest production Protocol Designer tag and is independent of the
+  robot-stack v10.0.0 pin. Staging tags, pd-test tags, and protocol-designer
+  prereleases are not eligible.
+known_gaps:
+  - Protocol Designer tag is independent of the robot-stack v10.0.0 pin
+  - Predicates run the v9.0.1 functions against v10.0.0 shared-data labware
+  - Deck-state checks (collisions, labware already placed) are not tables
+  - The tables are not normalized into entities, relationships, or retrieval documents
