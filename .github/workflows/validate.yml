@@ -15,17 +15,31 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # checkout repository sources for lint/test/fixture build
+      contents: read # checkout this repo and Opentrons/opentrons to build the corpus
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Checkout Opentrons/opentrons
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Opentrons/opentrons
+          path: opentrons
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           python-version: "3.12"
+
+      - name: Install Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.22.1"
+          package-manager-cache: false
 
       - name: Sync dependencies
         run: uv sync --all-extras --frozen
@@ -38,17 +52,25 @@ jobs:
       - name: Typecheck
         run: uv run mypy
 
-      - name: Unit tests
+      - name: Select highest corpus version
+        run: |
+          version="$(uv run python -m opentrons_knowledge.corpora)"
+          echo "CORPUS_VERSION=${version}" >> "$GITHUB_ENV"
+          echo "Highest corpus version: ${version}"
+
+      - name: Build corpus
+        run: |
+          uv run opentrons-knowledge build \
+            --manifest "corpora/${CORPUS_VERSION}/source-manifest.yaml" \
+            --opentrons-repo ./opentrons \
+            --output dist
+
+      - name: Validate corpus
+        run: |
+          uv run opentrons-knowledge validate \
+            --corpus "dist/opentrons-knowledge-${CORPUS_VERSION}"
+          uv run opentrons-knowledge inspect \
+            --corpus "dist/opentrons-knowledge-${CORPUS_VERSION}"
+
+      - name: Test
         run: uv run pytest -q
-
-      - name: Fixture corpus build
-        run: uv run opentrons-knowledge build --fixture --output dist
-
-      - name: Validate fixture corpus
-        run: uv run opentrons-knowledge validate --corpus dist/opentrons-knowledge-0.0.0-k1
-
-      - name: Upload fixture corpus
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fixture-corpus
-          path: dist/opentrons-knowledge-0.0.0-k1

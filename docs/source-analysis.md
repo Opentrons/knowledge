@@ -237,7 +237,7 @@ evaluates the tables instead of reading the source text.
 `tools/protocol-designer-export` is a small Node package (locked with
 `package-lock.json`; the build runs `npm ci` when `node_modules/` is missing).
 It requires Node.js >= 24.22.1, the version pinned by Opentrons `edge`
-(`.nvmrc` and `package.json` `engines`). The publish and corpus-build workflows
+(`.nvmrc` and `package.json` `engines`). The validate and publish workflows
 install `24.22.1`.
 The build checks out `ProtocolDesignerTablesConfig.sparse_paths` at the
 `protocol_designer` commit, links the exporter's `node_modules/` into that

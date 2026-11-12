@@ -45,4 +45,4 @@ a query service. The docs chunking is the one measured in
 - AI v1 guides are monorepo paths pinned to an `ai-server@*` tag; `pd/` is excluded.
 - A full corpus build expects a local Opentrons checkout or a network clone.
   The current manifest is `corpora/10.0.0-k5/source-manifest.yaml`.
-- CI builds a tiny fixture corpus for determinism.
+- CI builds the highest corpus version under `corpora/` and runs tests against that build.

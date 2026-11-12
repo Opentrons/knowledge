@@ -8,8 +8,29 @@ import pytest
 from pydantic import ValidationError
 
 from opentrons_knowledge.builder.pipeline import load_source_manifest
+from opentrons_knowledge.corpora import highest_corpus_version, version_sort_key
+from opentrons_knowledge.errors import ManifestError
 from opentrons_knowledge.models.enums import CompatibilityStatus
 from opentrons_knowledge.models.manifest import CompatibilityBlock, SourceEntry, SourceManifest
+
+
+def test_highest_corpus_version_orders_release_then_revision(tmp_path: Path) -> None:
+    for name in ("9.1.2-k3", "10.0.0-k1", "10.0.0-k10", "9.0.0-k1", "10.0.0-k5"):
+        version_dir = tmp_path / name
+        version_dir.mkdir()
+        (version_dir / "source-manifest.yaml").write_text("corpus: {}\n", encoding="utf-8")
+    (tmp_path / "notes").mkdir()
+    assert highest_corpus_version(tmp_path) == "10.0.0-k10"
+    assert version_sort_key("9.1.2-k3") < version_sort_key("10.0.0-k1")
+    assert version_sort_key("10.0.0-k5") < version_sort_key("10.0.0-k10")
+
+
+def test_highest_corpus_version_rejects_a_bad_name(tmp_path: Path) -> None:
+    version_dir = tmp_path / "not-a-version"
+    version_dir.mkdir()
+    (version_dir / "source-manifest.yaml").write_text("corpus: {}\n", encoding="utf-8")
+    with pytest.raises(ManifestError, match="Invalid corpus version"):
+        highest_corpus_version(tmp_path)
 
 
 def test_corpus_version_pattern() -> None:

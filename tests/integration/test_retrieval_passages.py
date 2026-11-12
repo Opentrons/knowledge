@@ -1,8 +1,9 @@
-"""Search the built 10.0.0-k3 bundle and require the whole section back.
+"""Search the built corpus and require the whole section back.
 
-These queries are ones where the winning chunk is only part of its section: the
-heading piece, or a later tab. The passage must still contain every chunk of
-that section. Skipped when ``dist/opentrons-knowledge-10.0.0-k3`` is absent.
+The corpus is the highest version under ``corpora/``. These queries are ones
+where the winning chunk is only part of its section: the heading piece, or a
+later tab. The passage must still contain every chunk of that section. Skipped
+when that corpus has not been built.
 """
 
 from __future__ import annotations
@@ -13,19 +14,20 @@ from typing import Any
 
 import pytest
 
+from opentrons_knowledge.corpora import highest_corpus_version
 from opentrons_knowledge.normalization.serialize import read_jsonl_zst
 from opentrons_knowledge.retrieval.bm25 import lookup_query, search, search_api
 from opentrons_knowledge.retrieval.both import search_both
 from opentrons_knowledge.retrieval.bundle import open_index
 from opentrons_knowledge.retrieval.passages import chunk_body, passages_for_hits
 
-BUNDLE = (
-    Path(__file__).resolve().parents[2] / "dist" / "opentrons-knowledge-10.0.0-k3" / "retrieval"
-)
+ROOT = Path(__file__).resolve().parents[2]
+VERSION = highest_corpus_version(ROOT / "corpora")
+BUNDLE = ROOT / "dist" / f"opentrons-knowledge-{VERSION}" / "retrieval"
 
 pytestmark = pytest.mark.skipif(
     not (BUNDLE / "docs" / "bm25").is_dir(),
-    reason="build dist/opentrons-knowledge-10.0.0-k3 to check full-section search results",
+    reason=f"build dist/opentrons-knowledge-{VERSION} to check full-section search results",
 )
 
 # (query, retrieval_id). Each query's top hit is this section, and that hit's

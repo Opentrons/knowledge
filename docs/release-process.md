@@ -27,9 +27,9 @@
 
 ## CI
 
-- **Validation workflow**: every PR (lint, mypy, unit tests, fixture corpus, zizmor on `.github/**`)
-- **Corpus build workflow**: builds from a manifest; uploads directory + packed `.tar.zst`
-- **Publication workflow**: manual/approved release; packs `.tar.zst` to GitHub Releases and pushes OCI to GHCR via ORAS
+- **Validation workflow** (`validate.yml`): every pull request and every push to `main`. Lint, typecheck, build the highest corpus version under `corpora/`, validate that build, and run the test suite against it.
+- **zizmor**: on `.github/**` changes.
+- **Publication workflow** (`publish.yml`): manual. Packs `.tar.zst` to GitHub Releases and pushes OCI to GHCR via ORAS.
 
 ### Publish via GitHub Actions
 
